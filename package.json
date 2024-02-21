@@ -5,16 +5,24 @@
   "main": "index.js",
   "scripts": {
     "test": "node tests",
+    "test:unit": "mocha --loader=ts-node/esm test/unit/*.test.ts",
     "asbuild:debug": "asc assembly/index.ts --target debug --enable simd",
     "asbuild:release": "asc assembly/index.ts --target release --enable simd",
-    "asbuild": "npm run asbuild:debug && npm run asbuild:release",
+    "asbuild": "npm run asbuild:debug && npm run asbuild:release && npm run generate",
+    "generate": "node --loader ts-node/esm ./scripts/codegen.ts",
     "start": "npx serve ."
   },
   "keywords": [],
   "author": "",
   "license": "ISC",
   "devDependencies": {
-    "assemblyscript": "^0.27.24"
+    "assemblyscript": "^0.27.24",
+    "@types/node": "^20.11.19",
+    "@types/mocha": "^10.0.6",
+    "ts-node": "^10.9.2",
+    "typescript": "^5.3.3",
+    "mocha": "^10.3.0",
+    "chai": "^5.1.0"
   },
   "type": "module",
   "exports": {
