@@ -4,6 +4,7 @@ const _module = new WebAssembly.Module(wasmCode);
 
 export interface WasmContext {
   readonly INPUT_LENGTH: number;
+  readonly PARALLEL_FACTOR: number;
   memory: {
     buffer: ArrayBuffer;
   };
@@ -23,6 +24,7 @@ export interface WasmContext {
 
   sum(): number;
   add(a: number, b: number): number;
+  xor16Inputs(): void;
 }
 
 const importObj = {
