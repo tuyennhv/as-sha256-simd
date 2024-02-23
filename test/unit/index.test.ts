@@ -1,5 +1,5 @@
 import {expect} from "chai";
-import {xor16Inputs, rotrU32, testRotrV128, ch, testCh, maj, testMaj, ep0, testEp0, ep1, testEp1, sig0, testSig0, sig1, testSig1} from "../../src/index.js";
+import {xor16Inputs, rotrU32, testRotrV128, ch, testCh, maj, testMaj, ep0, testEp0, ep1, testEp1, sig0, testSig0, sig1, testSig1, testLoadbe32V128} from "../../src/index.js";
 
 describe("Test assemblyscript", () => {
   it("xor16Inputs", () => {
@@ -74,4 +74,15 @@ describe("Test assemblyscript", () => {
     }
   });
 
+  it("testLoadbe32V128", () => {
+    for (let i = 0; i < 10_000; i++) {
+      const x = Math.floor(Math.random() * 0xFFFFFFFF);
+      expect(testLoadbe32V128(x)).equal(toBigEndian(x));
+    }
+  });
+
 });
+
+function toBigEndian(value: number): number {
+  return ((value & 0xFF) << 24) | ((value & 0xFF00) << 8) | ((value & 0xFF0000) >>> 8) | ((value & 0xFF000000) >>> 24);
+}

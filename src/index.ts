@@ -114,4 +114,7 @@ export function testSig1(x: number): number {
   return ctx.testSig1(x);
 }
 
+export function testLoadbe32V128(value: number): number {
+  return ctx.testLoadbe32V128(value);
+}
 

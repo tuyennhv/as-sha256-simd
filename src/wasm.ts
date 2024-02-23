@@ -37,6 +37,7 @@ export interface WasmContext {
   rotrU32(a: number, b: number): number;
   testRotrV128(a: number, b: number): number;
   xor16Inputs(): void;
+  testLoadbe32V128(value: number): number;
 }
 
 const importObj = {

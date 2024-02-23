@@ -194,6 +194,12 @@ export function testRotrV128(value: u32, bits: i32): u32 {
   return extractLane0(resultV128);
 }
 
+export function testLoadbe32V128(value: u32): u32 {
+  const v128 = i32x4.splat(value);
+  const resultV128 = load32beV128(v128);
+  return extractLane0(resultV128);
+}
+
 function extractLane0(v128: v128): u32 {
   const lane0 = i32x4.extract_lane(v128, 0);
   const lane1 = i32x4.extract_lane(v128, 1);
@@ -223,6 +229,15 @@ function rotrV128(value: v128, bits: i32): v128 {
 
   // Combine the shifted parts with bitwise OR to achieve rotation
   return v128.or(rightShifted, leftShifted);
+}
+
+function load32beV128(value: v128): v128 {
+  const value0 = i32x4.shl(v128.and(value, i32x4.splat(0x000000FF)), 24);
+  const value1 = i32x4.shl(v128.and(value, i32x4.splat(0x0000FF00)), 8);
+  const value2 = i32x4.shr_u(v128.and(value, i32x4.splat(0x00FF0000)), 8);
+  const value3 = i32x4.shr_u(v128.and(value, i32x4.splat(0xFF000000)), 24);
+
+  return v128.or(v128.or(value0, value1), v128.or(value2, value3));
 }
 
 @inline
