@@ -75,27 +75,130 @@ export function xor16Inputs(): void {
   v128.store(outputPtr, v128.xor(vInputs[2], vInputs[3]), 1 * 16);
 }
 
+export function CH(x: u32, y: u32, z: u32): u32 {
+  return((x & y) ^ (~x & z));
+}
+
+export function CHV128(x: v128, y: v128, z: v128): v128 {
+  const a = v128.and(x, y);
+  const b = v128.and(v128.not(x), z);
+  return v128.xor(a, b);
+}
+
+export function MAJ(x: u32, y: u32, z:u32): u32 {
+  return ((x & y) ^ (x & z) ^ (y & z));
+}
+
+export function MAJV128(x: v128, y: v128, z: v128): v128 {
+  const a = v128.and(x, y);
+  const b = v128.and(x, z);
+  const c = v128.and(y, z);
+  return v128.xor(v128.xor(a, b), c);
+}
+
+export function EP0(x: u32): u32 {
+  return rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22);
+}
+
+export function EP0V128(x: v128): v128 {
+  const a = rotrV128(x, 2);
+  const b = rotrV128(x, 13);
+  const c = rotrV128(x, 22);
+  return v128.xor(v128.xor(a, b), c);
+}
+
+export function EP1(x: u32): u32 {
+  return rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25);
+}
+
+export function EP1V128(x: v128): v128 {
+  const a = rotrV128(x, 6);
+  const b = rotrV128(x, 11);
+  const c = rotrV128(x, 25);
+  return v128.xor(v128.xor(a, b), c);
+}
+
+export function SIG0(x: u32): u32 {
+  return rotr(x, 7) ^ rotr(x, 18) ^ (x >>> 3);
+}
+
+export function SIG0V128(x: v128): v128 {
+  const a = rotrV128(x, 7);
+  const b = rotrV128(x, 18);
+  const c = i32x4.shr_u(x, 3);
+  return v128.xor(v128.xor(a, b), c);
+}
+
 export function SIG1(x: u32): u32 {
   return rotr(x, 17) ^ rotr(x, 19) ^ (x >>> 10);
 }
 
-// export function SIG1P(x: v128): v128 {
-//   const a = i32x4.shr_u(x, 17);
-//   const b = i32x4.shr_u(x, 19);
-//   const c =
-// }
+export function SIG1V128(x: v128): v128 {
+  const a = rotrV128(x, 17);
+  const b = rotrV128(x, 19);
+  const c = i32x4.shr_u(x, 10);
+  return v128.xor(v128.xor(a, b), c);
+}
 
 export function rotrU32(value: u32, bits: i32): u32 {
   return rotr(value, bits);
 }
 
+/////////////////////////////////////////////////////////
+// Below is test utilities, should be removed after all
+/////////////////////////////////////////////////////////
+export function testCh(x: u32, y: u32, z: u32): u32 {
+  const x2 = i32x4.splat(x);
+  const y2 = i32x4.splat(y);
+  const z2 = i32x4.splat(z);
+  const resultV128 = CHV128(x2, y2, z2);
+  return extractLane0(resultV128);
+}
+
+export function testMaj(x: u32, y: u32, z: u32): u32 {
+  const x2 = i32x4.splat(x);
+  const y2 = i32x4.splat(y);
+  const z2 = i32x4.splat(z);
+  const resultV128 = MAJV128(x2, y2, z2);
+  return extractLane0(resultV128);
+}
+
+
+export function testEp0(value: u32): u32 {
+  const v128 = i32x4.splat(value);
+  const resultV128 = EP0V128(v128);
+  return extractLane0(resultV128);
+}
+
+export function testEp1(value: u32): u32 {
+  const v128 = i32x4.splat(value);
+  const resultV128 = EP1V128(v128);
+  return extractLane0(resultV128);
+}
+
+export function testSig0(value: u32): u32 {
+  const v128 = i32x4.splat(value);
+  const resultV128 = SIG0V128(v128);
+  return extractLane0(resultV128);
+}
+
+export function testSig1(value: u32): u32 {
+  const v128 = i32x4.splat(value);
+  const resultV128 = SIG1V128(v128);
+  return extractLane0(resultV128);
+}
+
 export function testRotrV128(value: u32, bits: i32): u32 {
   const v128 = i32x4.splat(value);
   const resultV128 = rotrV128(v128, bits);
-  const lane0 = i32x4.extract_lane(resultV128, 0);
-  const lane1 = i32x4.extract_lane(resultV128, 0);
-  const lane2 = i32x4.extract_lane(resultV128, 0);
-  const lane3 = i32x4.extract_lane(resultV128, 0);
+  return extractLane0(resultV128);
+}
+
+function extractLane0(v128: v128): u32 {
+  const lane0 = i32x4.extract_lane(v128, 0);
+  const lane1 = i32x4.extract_lane(v128, 1);
+  const lane2 = i32x4.extract_lane(v128, 2);
+  const lane3 = i32x4.extract_lane(v128, 3);
 
   if (lane0 !== lane1 || lane0 !== lane2 || lane0 !== lane3) {
     throw new Error("rotrV128 failed");

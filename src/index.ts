@@ -66,3 +66,52 @@ export function testRotrV128(a: number, b: number): number {
   return ctx.testRotrV128(a, b);
 }
 
+export function ch(x: number, y: number, z: number): number {
+  return ctx.CH(x, y, z);
+}
+
+export function testCh(x: number, y: number, z: number): number {
+  return ctx.testCh(x, y, z);
+}
+
+export function maj(x: number, y: number, z: number): number {
+  return ctx.MAJ(x, y, z);
+}
+
+export function testMaj(x: number, y: number, z: number): number {
+  return ctx.testMaj(x, y, z);
+}
+
+export function ep0(x: number): number {
+  return ctx.EP0(x);
+}
+
+export function testEp0(x: number): number {
+  return ctx.testEp0(x);
+}
+
+export function ep1(x: number): number {
+  return ctx.EP1(x);
+}
+
+export function testEp1(x: number): number {
+  return ctx.testEp1(x);
+}
+
+export function sig0(x: number): number {
+  return ctx.SIG0(x);
+}
+
+export function testSig0(x: number): number {
+  return ctx.testSig0(x);
+}
+
+export function sig1(x: number): number {
+  return ctx.SIG1(x);
+}
+
+export function testSig1(x: number): number {
+  return ctx.testSig1(x);
+}
+
+

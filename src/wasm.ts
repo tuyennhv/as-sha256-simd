@@ -22,6 +22,18 @@ export interface WasmContext {
   // digest(length: number): void;
   // digest64(inPtr: number, outPtr: number): void;
 
+  CH(x: number, y: number, z: number): number;
+  testCh(x: number, y: number, z: number): number;
+  MAJ(x: number, y: number, z: number): number;
+  testMaj(x: number, y: number, z: number): number;
+  EP0(x: number): number;
+  testEp0(x: number): number;
+  EP1(x: number): number;
+  testEp1(x: number): number;
+  SIG0(x: number): number;
+  testSig0(x: number): number;
+  SIG1(x: number): number;
+  testSig1(x: number): number;
   rotrU32(a: number, b: number): number;
   testRotrV128(a: number, b: number): number;
   xor16Inputs(): void;
