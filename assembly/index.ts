@@ -75,6 +75,53 @@ export function xor16Inputs(): void {
   v128.store(outputPtr, v128.xor(vInputs[2], vInputs[3]), 1 * 16);
 }
 
+export function SIG1(x: u32): u32 {
+  return rotr(x, 17) ^ rotr(x, 19) ^ (x >>> 10);
+}
+
+// export function SIG1P(x: v128): v128 {
+//   const a = i32x4.shr_u(x, 17);
+//   const b = i32x4.shr_u(x, 19);
+//   const c =
+// }
+
+export function rotrU32(value: u32, bits: i32): u32 {
+  return rotr(value, bits);
+}
+
+export function testRotrV128(value: u32, bits: i32): u32 {
+  const v128 = i32x4.splat(value);
+  const resultV128 = rotrV128(v128, bits);
+  const lane0 = i32x4.extract_lane(resultV128, 0);
+  const lane1 = i32x4.extract_lane(resultV128, 0);
+  const lane2 = i32x4.extract_lane(resultV128, 0);
+  const lane3 = i32x4.extract_lane(resultV128, 0);
+
+  if (lane0 !== lane1 || lane0 !== lane2 || lane0 !== lane3) {
+    throw new Error("rotrV128 failed");
+  }
+  return lane0;
+}
+
+/**
+ * rotr is not natively supported by v128 so we have to implement it manually
+ * @param value
+ * @param bits
+ * @returns
+ */
+function rotrV128(value: v128, bits: i32): v128 {
+  const maskBits = 32 - bits;
+
+  // Shift right (logical) each lane by 'bits'
+  const rightShifted = i32x4.shr_u(value, bits);
+
+  // Shift left each lane by (32 - bits) to handle the wrap-around part of rotation
+  const leftShifted = i32x4.shl(value, maskBits);
+
+  // Combine the shifted parts with bitwise OR to achieve rotation
+  return v128.or(rightShifted, leftShifted);
+}
+
 @inline
 function load32(ptr: usize, offset: usize): u32 {
   return load<u32>(ptr + (offset << alignof<u32>()));

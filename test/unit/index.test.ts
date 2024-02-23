@@ -1,18 +1,8 @@
 import {expect} from "chai";
-import {add, xor16Inputs, sum} from "../../src/index.js";
+import {xor16Inputs, rotrU32, testRotrV128} from "../../src/index.js";
 
 describe("Test assemblyscript", () => {
-  it("add", () => {
-    const result = add(1, 2);
-    expect(result).equal(1 + 1 + 2 + 1);
-  });
-
-  it("sum", () => {
-    const input = Array.from({length: 512}, () => 1);
-    expect(sum(new Uint8Array(input))).equal(512);
-  });
-
-  it.only("xor16Inputs", () => {
+  it("xor16Inputs", () => {
     const hashInputs: Uint8Array[] = [];
     for (let i = 0; i < 16; i++) {
       const hashInput = new Uint8Array(4)
@@ -26,6 +16,15 @@ describe("Test assemblyscript", () => {
     for (let i = 0; i < 16; i++) {
       expect(hashOutputs[i][0]).equal(i ^ (i + 1), "failed at index " + i);
       expect(hashOutputs[i][1]).equal((i + 2) ^ (i + 3), "failed at index " + i);
+    }
+  });
+
+  it("rotr", () => {
+    for (let i = 0; i < 10_000; i++) {
+      const value = Math.floor(Math.random() * 0xFFFFFFFF);
+      for (let bits = 0; bits < 31; bits++) {
+        expect(rotrU32(value, bits)).equal(testRotrV128(value, bits));
+      }
     }
   });
 

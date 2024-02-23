@@ -9,18 +9,6 @@ const inputUint8Array = new Uint8Array(ctx.memory.buffer, wasmInputValue, ctx.IN
 const outputUint8Array = new Uint8Array(ctx.memory.buffer, wasmOutputValue, 32);
 const inputUint32Array = new Uint32Array(ctx.memory.buffer, wasmInputValue, ctx.INPUT_LENGTH);
 
-export function add(a: number, b: number): number {
-  return ctx.add(a + 1, b + 1);
-}
-
-export function sum(input: Uint8Array): number {
-  if (input.length !== 512) {
-    throw new Error(`Input length must be ${ctx.INPUT_LENGTH}`);
-  }
-  inputUint8Array.set(input);
-  return ctx.sum();
-}
-
 // TODO: reuse from context?
 const PARALLEL_FACTOR = 16;
 // TODO: change 2 to 64
@@ -68,5 +56,13 @@ export function xor16Inputs(hInputs: HASH_INPUT[]): Uint8Array[] {
   }
 
   return outputs;
+}
+
+export function rotrU32(a: number, b: number): number {
+  return ctx.rotrU32(a, b);
+}
+
+export function testRotrV128(a: number, b: number): number {
+  return ctx.testRotrV128(a, b);
 }
 
