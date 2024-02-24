@@ -1,4 +1,5 @@
 import {expect} from "chai";
+import crypto from "crypto";
 import {rotrU32, testRotrV128, ch, testCh, maj, testMaj, ep0, testEp0, ep1, testEp1, sig0, testSig0, sig1, testSig1, testLoadbe32V128, hash4Inputs, digest64} from "../../src/index.js";
 
 describe("Test assemblyscript", () => {
@@ -87,6 +88,14 @@ describe("Test assemblyscript", () => {
     ]);
     for (let i = 0; i < 4; i++) {
       expect(outputs[i]).to.be.deep.equal(expectedOutput, "incorrect hash4Inputs result " + i);
+    }
+  });
+
+  it("testHash4Inputs 1000 times", () => {
+    for (let i = 0; i < 1000; i++) {
+      const input = crypto.randomBytes(64);
+      const outputs = hash4Inputs(input, input, input, input);
+      expect(outputs[0]).to.be.deep.equal(digest64(input));
     }
   });
 

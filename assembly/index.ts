@@ -5,7 +5,7 @@ const DIGEST_LENGTH = 32 * PARALLEL_FACTOR;
 
 // Import the JavaScript logging function
 @external("env", "logValue")
-declare function logValue(value: f32): void;
+declare function logValue(value: u32): void;
 
 // input buffer
 export const input = new ArrayBuffer(INPUT_LENGTH);
@@ -15,7 +15,6 @@ const inputPtr = changetype<usize>(input);
 export const output = new ArrayBuffer(DIGEST_LENGTH);
 const outputPtr = changetype<usize>(output);
 export function add(a: i32, b: i32): i32 {
-  logValue(32);
   return a + b;
 }
 
@@ -368,6 +367,7 @@ export function digest64(inPtr: usize, outPtr: usize): void {
   init();
   hashBlocks(wPtr,inPtr);
   hashPreCompW(w64Ptr);
+
   store32(outPtr, 0, bswap(H0));
   store32(outPtr, 1, bswap(H1));
   store32(outPtr, 2, bswap(H2));
@@ -382,51 +382,53 @@ export function digest64V128(inPtr: usize, outPtr: usize): void {
   // inPtr is 64 bytes each x 4 (PARALLEL_FACTOR) = 256 bytes
   // TODO: reuse i
   for (let i = 0; i < 16; i++) {
-    i32x4.replace_lane(inV128Arr[i], 0, load32(inPtr, 0 + i * 4));
-    i32x4.replace_lane(inV128Arr[i], 1, load32(inPtr, 64 + i * 4));
-    i32x4.replace_lane(inV128Arr[i], 2, load32(inPtr, 128 + i * 4));
-    i32x4.replace_lane(inV128Arr[i], 3, load32(inPtr, 192 + i * 4));
+    inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 0, load32(inPtr, 0 + i));
+    inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 1, load32(inPtr, 16 + i));
+    inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 2, load32(inPtr, 32 + i));
+    inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 3, load32(inPtr, 48 + i));
   }
   initV128();
   hashBlocksV128(WV128, inV128Arr);
   hashPreCompWV128(W64V128);
+
   // outPtr is 32 bytes each x 4 (PARALLEL_FACTOR) = 128 bytes
   // extract lane manually otherwise get "Expression must be a compile-time constant.""
   store32(outPtr, 0, bswap(i32x4.extract_lane(H0V128, 0)));
-  store32(outPtr, 4, bswap(i32x4.extract_lane(H1V128, 0)));
-  store32(outPtr, 8, bswap(i32x4.extract_lane(H2V128, 0)));
-  store32(outPtr, 12, bswap(i32x4.extract_lane(H3V128, 0)));
-  store32(outPtr, 16, bswap(i32x4.extract_lane(H4V128, 0)));
-  store32(outPtr, 20, bswap(i32x4.extract_lane(H5V128, 0)));
-  store32(outPtr, 24, bswap(i32x4.extract_lane(H6V128, 0)));
-  store32(outPtr, 28, bswap(i32x4.extract_lane(H7V128, 0)));
+  store32(outPtr, 1, bswap(i32x4.extract_lane(H1V128, 0)));
+  store32(outPtr, 2, bswap(i32x4.extract_lane(H2V128, 0)));
+  store32(outPtr, 3, bswap(i32x4.extract_lane(H3V128, 0)));
+  // why this is not correct??
+  store32(outPtr, 4, bswap(i32x4.extract_lane(H4V128, 0)));
+  store32(outPtr, 5, bswap(i32x4.extract_lane(H5V128, 0)));
+  store32(outPtr, 6, bswap(i32x4.extract_lane(H6V128, 0)));
+  store32(outPtr, 7, bswap(i32x4.extract_lane(H7V128, 0)));
 
-  store32(outPtr, 32, bswap(i32x4.extract_lane(H0V128, 1)));
-  store32(outPtr, 36, bswap(i32x4.extract_lane(H1V128, 1)));
-  store32(outPtr, 40, bswap(i32x4.extract_lane(H2V128, 1)));
-  store32(outPtr, 44, bswap(i32x4.extract_lane(H3V128, 1)));
-  store32(outPtr, 48, bswap(i32x4.extract_lane(H4V128, 1)));
-  store32(outPtr, 52, bswap(i32x4.extract_lane(H5V128, 1)));
-  store32(outPtr, 56, bswap(i32x4.extract_lane(H6V128, 1)));
-  store32(outPtr, 60, bswap(i32x4.extract_lane(H7V128, 1)));
+  store32(outPtr, 8, bswap(i32x4.extract_lane(H0V128, 1)));
+  store32(outPtr, 9, bswap(i32x4.extract_lane(H1V128, 1)));
+  store32(outPtr, 10, bswap(i32x4.extract_lane(H2V128, 1)));
+  store32(outPtr, 11, bswap(i32x4.extract_lane(H3V128, 1)));
+  store32(outPtr, 12, bswap(i32x4.extract_lane(H4V128, 1)));
+  store32(outPtr, 13, bswap(i32x4.extract_lane(H5V128, 1)));
+  store32(outPtr, 14, bswap(i32x4.extract_lane(H6V128, 1)));
+  store32(outPtr, 15, bswap(i32x4.extract_lane(H7V128, 1)));
 
-  store32(outPtr, 64, bswap(i32x4.extract_lane(H0V128, 2)));
-  store32(outPtr, 68, bswap(i32x4.extract_lane(H1V128, 2)));
-  store32(outPtr, 72, bswap(i32x4.extract_lane(H2V128, 2)));
-  store32(outPtr, 76, bswap(i32x4.extract_lane(H3V128, 2)));
-  store32(outPtr, 80, bswap(i32x4.extract_lane(H4V128, 2)));
-  store32(outPtr, 84, bswap(i32x4.extract_lane(H5V128, 2)));
-  store32(outPtr, 88, bswap(i32x4.extract_lane(H6V128, 2)));
-  store32(outPtr, 92, bswap(i32x4.extract_lane(H7V128, 2)));
+  store32(outPtr, 16, bswap(i32x4.extract_lane(H0V128, 2)));
+  store32(outPtr, 17, bswap(i32x4.extract_lane(H1V128, 2)));
+  store32(outPtr, 18, bswap(i32x4.extract_lane(H2V128, 2)));
+  store32(outPtr, 19, bswap(i32x4.extract_lane(H3V128, 2)));
+  store32(outPtr, 20, bswap(i32x4.extract_lane(H4V128, 2)));
+  store32(outPtr, 21, bswap(i32x4.extract_lane(H5V128, 2)));
+  store32(outPtr, 22, bswap(i32x4.extract_lane(H6V128, 2)));
+  store32(outPtr, 23, bswap(i32x4.extract_lane(H7V128, 2)));
 
-  store32(outPtr, 96, bswap(i32x4.extract_lane(H0V128, 3)));
-  store32(outPtr, 100, bswap(i32x4.extract_lane(H1V128, 3)));
-  store32(outPtr, 104, bswap(i32x4.extract_lane(H2V128, 3)));
-  store32(outPtr, 108, bswap(i32x4.extract_lane(H3V128, 3)));
-  store32(outPtr, 112, bswap(i32x4.extract_lane(H4V128, 3)));
-  store32(outPtr, 116, bswap(i32x4.extract_lane(H5V128, 3)));
-  store32(outPtr, 120, bswap(i32x4.extract_lane(H6V128, 3)));
-  store32(outPtr, 124, bswap(i32x4.extract_lane(H7V128, 3)));
+  store32(outPtr, 24, bswap(i32x4.extract_lane(H0V128, 3)));
+  store32(outPtr, 25, bswap(i32x4.extract_lane(H1V128, 3)));
+  store32(outPtr, 26, bswap(i32x4.extract_lane(H2V128, 3)));
+  store32(outPtr, 27, bswap(i32x4.extract_lane(H3V128, 3)));
+  store32(outPtr, 28, bswap(i32x4.extract_lane(H4V128, 3)));
+  store32(outPtr, 29, bswap(i32x4.extract_lane(H5V128, 3)));
+  store32(outPtr, 30, bswap(i32x4.extract_lane(H6V128, 3)));
+  store32(outPtr, 31, bswap(i32x4.extract_lane(H7V128, 3)));
 }
 
 export function CH(x: u32, y: u32, z: u32): u32 {

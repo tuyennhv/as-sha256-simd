@@ -55,6 +55,6 @@ export function newInstance(): WasmContext {
   return new WebAssembly.Instance(_module, importObj).exports as unknown as WasmContext;
 }
 
-function logValue(value: number): void {
+function logValue(value: any): void {
   console.log(value);
 }
