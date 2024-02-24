@@ -1,24 +1,7 @@
 import {expect} from "chai";
-import {xor16Inputs, rotrU32, testRotrV128, ch, testCh, maj, testMaj, ep0, testEp0, ep1, testEp1, sig0, testSig0, sig1, testSig1, testLoadbe32V128} from "../../src/index.js";
+import {rotrU32, testRotrV128, ch, testCh, maj, testMaj, ep0, testEp0, ep1, testEp1, sig0, testSig0, sig1, testSig1, testLoadbe32V128, hash4Inputs, digest64} from "../../src/index.js";
 
 describe("Test assemblyscript", () => {
-  it("xor16Inputs", () => {
-    const hashInputs: Uint8Array[] = [];
-    for (let i = 0; i < 16; i++) {
-      const hashInput = new Uint8Array(4)
-      hashInput[0] = i;
-      hashInput[1] = i + 1;
-      hashInput[2] = i + 2;
-      hashInput[3] = i + 3;
-      hashInputs.push(hashInput);
-    }
-    const hashOutputs = xor16Inputs(hashInputs);
-    for (let i = 0; i < 16; i++) {
-      expect(hashOutputs[i][0]).equal(i ^ (i + 1), "failed at index " + i);
-      expect(hashOutputs[i][1]).equal((i + 2) ^ (i + 3), "failed at index " + i);
-    }
-  });
-
   it("rotr", () => {
     for (let i = 0; i < 10_000; i++) {
       const value = Math.floor(Math.random() * 0xFFFFFFFF);
@@ -78,6 +61,32 @@ describe("Test assemblyscript", () => {
     for (let i = 0; i < 10_000; i++) {
       const x = Math.floor(Math.random() * 0xFFFFFFFF);
       expect(testLoadbe32V128(x)).equal(toBigEndian(x));
+    }
+  });
+
+  it("test digest64", () => {
+    const input1 = "gajindergajindergajindergajinder";
+    const input2 = "gajindergajindergajindergajinder";
+    const input = Buffer.from(input1 + input2, "utf8");
+    const output = digest64(input);
+    const expectedOutput = new Uint8Array([
+      190, 57, 56, 15, 241, 208, 38, 30, 111, 55, 218, 254, 66, 120, 182, 98, 239, 97, 31, 28, 178, 247, 192, 161,
+      131, 72, 178, 215, 235, 20, 207, 110,
+    ]);
+    expect(output).to.be.deep.equal(expectedOutput, "incorrect digest64 result");
+  })
+
+  it("testHash4Inputs", () => {
+    const input1 = "gajindergajindergajindergajinder";
+    const input2 = "gajindergajindergajindergajinder";
+    const input = Buffer.from(input1 + input2, "utf8");
+    const outputs = hash4Inputs(input, input, input, input);
+    const expectedOutput = new Uint8Array([
+      190, 57, 56, 15, 241, 208, 38, 30, 111, 55, 218, 254, 66, 120, 182, 98, 239, 97, 31, 28, 178, 247, 192, 161,
+      131, 72, 178, 215, 235, 20, 207, 110,
+    ]);
+    for (let i = 0; i < 4; i++) {
+      expect(outputs[i]).to.be.deep.equal(expectedOutput, "incorrect hash4Inputs result " + i);
     }
   });
 

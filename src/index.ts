@@ -12,7 +12,7 @@ const inputUint32Array = new Uint32Array(ctx.memory.buffer, wasmInputValue, ctx.
 // TODO: reuse from context?
 const PARALLEL_FACTOR = 16;
 // TODO: change 2 to 64
-const HASH_INPUT_LENGTH = 4;
+const HASH_INPUT_LENGTH = 64;
 // TODO: change 1 to 32
 const HASH_OUTPUT_LENGTH = 2;
 // 64 bytes
@@ -116,5 +116,47 @@ export function testSig1(x: number): number {
 
 export function testLoadbe32V128(value: number): number {
   return ctx.testLoadbe32V128(value);
+}
+
+export function digest64(data: Uint8Array): Uint8Array {
+  if (data.length === 64) {
+    inputUint8Array.set(data);
+    ctx.digest64(wasmInputValue, wasmOutputValue);
+    const output = new Uint8Array(32);
+    output.set(outputUint8Array.subarray(0, 32));
+    return output;
+  }
+  throw new Error("InvalidLengthForDigest64");
+}
+
+/**
+ * Hash 4 inputs, each 64 bytes
+ * @param i0
+ * @param i1
+ * @param i2
+ * @param i3
+ */
+export function hash4Inputs(i0: Uint8Array, i1: Uint8Array, i2: Uint8Array, i3: Uint8Array): Uint8Array[] {
+  if (i0.length !== HASH_INPUT_LENGTH || i1.length !== HASH_INPUT_LENGTH || i2.length !== HASH_INPUT_LENGTH || i3.length !== HASH_INPUT_LENGTH) {
+    throw new Error(`Input length must be 64`);
+  }
+  // set up input buffer for v128
+  inputUint8Array.set(i0, 0);
+  inputUint8Array.set(i1, 64);
+  inputUint8Array.set(i2, 128);
+  inputUint8Array.set(i3, 192);
+
+  ctx.digest64V128(wasmInputValue, wasmOutputValue);
+
+  const output0 = new Uint8Array(32);
+  output0.set(outputUint8Array.subarray(0, 32));
+  const output1 = new Uint8Array(32);
+  output1.set(outputUint8Array.subarray(32, 64));
+  const output2 = new Uint8Array(32);
+  output2.set(outputUint8Array.subarray(64, 96));
+  const output3 = new Uint8Array(32);
+  output3.set(outputUint8Array.subarray(96, 128));
+
+  return [output0, output1, output2, output3];
 }
 
