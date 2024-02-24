@@ -6,6 +6,8 @@
   "scripts": {
     "test": "node tests",
     "test:unit": "mocha --loader=ts-node/esm test/unit/*.test.ts",
+    "benchmark": "node --loader ts-node/esm ./node_modules/.bin/benchmark 'test/perf/index.test.ts'",
+    "benchmark:local": "yarn benchmark --local",
     "asbuild:debug": "asc assembly/index.ts --target debug --enable simd",
     "asbuild:release": "asc assembly/index.ts --target release --enable simd",
     "asbuild": "npm run asbuild:debug && npm run asbuild:release && npm run generate",
@@ -22,6 +24,7 @@
     "ts-node": "^10.9.2",
     "typescript": "^5.3.3",
     "mocha": "^10.3.0",
+    "@dapplion/benchmark": "^0.2.2",
     "chai": "^5.1.0"
   },
   "type": "module",

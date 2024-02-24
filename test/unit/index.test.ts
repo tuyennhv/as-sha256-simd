@@ -95,7 +95,11 @@ describe("Test assemblyscript", () => {
     for (let i = 0; i < 1000; i++) {
       const input = crypto.randomBytes(64);
       const outputs = hash4Inputs(input, input, input, input);
-      expect(outputs[0]).to.be.deep.equal(digest64(input));
+      const expectedOutput = digest64(input);
+      expect(outputs[0]).to.be.deep.equal(expectedOutput);
+      expect(outputs[1]).to.be.deep.equal(expectedOutput);
+      expect(outputs[2]).to.be.deep.equal(expectedOutput);
+      expect(outputs[3]).to.be.deep.equal(expectedOutput);
     }
   });
 
