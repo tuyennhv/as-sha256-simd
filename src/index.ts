@@ -169,7 +169,7 @@ export function hash8HashObjects(inputs: HashObject[]): HashObject[] {
   inputUint32Array[62] = inputs[5].h7;
   inputUint32Array[63] = inputs[7].h7;
 
-  ctx.hash4HashObjects(wasmInputValue, wasmOutputValue);
+  ctx.hash8HashObjects(wasmInputValue, wasmOutputValue);
 
   const output0 = byteArrayToHashObject(outputUint8Array.subarray(0, 32));
   const output1 = byteArrayToHashObject(outputUint8Array.subarray(32, 64));

@@ -22,7 +22,7 @@ export interface WasmContext {
   // digest(length: number): void;
   digest64(inPtr: number, outPtr: number): void;
   hash4Inputs(inPtr: number, outPtr: number): void;
-  hash4HashObjects(inPtr: number, outPtr: number): void;
+  hash8HashObjects(inPtr: number, outPtr: number): void;
 }
 
 const importObj = {

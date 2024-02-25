@@ -69,13 +69,12 @@ var a: u32, b: u32, c: u32, d: u32, e: u32, f: u32, g: u32, h: u32, i: u32, t1: 
 let aV128: v128, bV128: v128, cV128: v128, dV128: v128, eV128: v128, fV128: v128, gV128: v128, hV128: v128, iV128: v128, t1V128: v128, t2V128: v128;
 
 const WV128: v128[] = [];
-// TODO: reuse variables i
-for (let i = 0; i < 64; i++) {
+for (i = 0; i < 64; i++) {
   WV128.push(i32x4.splat(0));
 }
 
 const inV128Arr: v128[] = [];
-for (let i = 0; i < 16; i++) {
+for (i = 0; i < 16; i++) {
   inV128Arr.push(i32x4.splat(0));
 }
 
@@ -116,8 +115,7 @@ const DEFAULT_H5V128 = i32x4.splat(0x9b05688c);
 const DEFAULT_H6V128 = i32x4.splat(0x1f83d9ab);
 const DEFAULT_H7V128 = i32x4.splat(0x5be0cd19);
 
-// TODO: is it needed to export this function
-export function initV128(): void {
+function initV128(): void {
   H0V128 = DEFAULT_H0V128;
   H1V128 = DEFAULT_H1V128;
   H2V128 = DEFAULT_H2V128;
@@ -185,7 +183,6 @@ function hashBlocks(wPtr: usize, mPtr: usize): void {
   H7 += h;
 }
 
-//TODO: no need to export these functions
 /**
  * Expand message blocks (16 32bit blocks), into extended message blocks (64 32bit blocks),
  * Apply SHA256 compression function on extended message blocks
@@ -203,7 +200,7 @@ function hashBlocks(wPtr: usize, mPtr: usize): void {
  *   ...
  *   wV128_63      based on item 47 to 62
  */
-export function hashBlocksV128(wV128Arr: v128[], mV128Arr: v128[]): void {
+function hashBlocksV128(wV128Arr: v128[], mV128Arr: v128[]): void {
   // this is a copy of data
   aV128 = H0V128;
   bV128 = H1V128;
@@ -215,19 +212,19 @@ export function hashBlocksV128(wV128Arr: v128[], mV128Arr: v128[]): void {
   hV128 = H7V128;
 
   // TODO: this is not parallel operators, need to use v128.load and work on bytes
-  for (let i = 0; i < 16; i++) {
+  for (i = 0; i < 16; i++) {
     wV128Arr[i] = load32beV128(mV128Arr[i]);
   }
 
   // Expand message blocks 17-64
-  for (let i = 16; i < 64; i++) {
+  for (i = 16; i < 64; i++) {
     let tmp0 = i32x4.add(SIG1V128(wV128Arr[i - 2]), wV128Arr[i - 7]);
     let tmp1 = i32x4.add(SIG0V128(wV128Arr[i - 15]), wV128Arr[i - 16]);
     wV128Arr[i] = i32x4.add(tmp0, tmp1);
   }
 
   // Apply SHA256 compression function on expanded message blocks
-  for (let i = 0; i < 64; i++) {
+  for (i = 0; i < 64; i++) {
     // t1 = h + EP1(e) + CH(e, f, g) + load32(kPtr, i) + load32(wPtr, i);
     t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), KV128[i]), wV128Arr[i]);
     // t2 = EP0(a) + MAJ(a, b, c);
@@ -305,7 +302,7 @@ function hashPreCompWV128(wV128Arr: v128[]): void {
   hV128 = H7V128;
 
   // Apply SHA256 compression function on expanded message blocks
-  for (let i = 0; i < 64; i++) {
+  for (i = 0; i < 64; i++) {
     t1V128 = i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), wV128Arr[i]);
     t2V128 = i32x4.add(EP0V128(aV128), MAJV128(aV128, bV128, cV128));
     hV128 = gV128;
@@ -345,18 +342,17 @@ export function digest64(inPtr: usize, outPtr: usize): void {
 
 export function hash4Inputs(inPtr: usize, outPtr: usize): void {
   // inPtr is 64 bytes each x 4 (PARALLEL_FACTOR) = 256 bytes
-  // TODO: reuse i
-  for (let i = 0; i < 16; i++) {
+  for (i = 0; i < 16; i++) {
     inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 0, load32(inPtr, 0 + i));
     inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 1, load32(inPtr, 16 + i));
     inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 2, load32(inPtr, 32 + i));
     inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 3, load32(inPtr, 48 + i));
   }
 
-  digest64V128(inPtr, outPtr);
+  digest64V128(outPtr);
 }
 
-export function hash4HashObjects(inPtr: usize, outPtr: usize): void {
+export function hash8HashObjects(inPtr: usize, outPtr: usize): void {
   // cannot do the loop here, otherwise get "Expression must be a compile-time constant."
   inV128Arr[0] = v128.load(inPtr, 0);
   inV128Arr[1] = v128.load(inPtr, 16);
@@ -375,10 +371,10 @@ export function hash4HashObjects(inPtr: usize, outPtr: usize): void {
   inV128Arr[14] = v128.load(inPtr, 224);
   inV128Arr[15] = v128.load(inPtr, 240);
 
-  digest64V128(inPtr, outPtr);
+  digest64V128(outPtr);
 }
 
-export function digest64V128(inPtr: usize, outPtr: usize): void {
+function digest64V128(outPtr: usize): void {
   initV128();
   hashBlocksV128(WV128, inV128Arr);
   hashPreCompWV128(W64V128);
