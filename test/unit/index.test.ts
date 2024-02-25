@@ -1,70 +1,9 @@
 import {expect} from "chai";
 import crypto from "crypto";
-import {rotrU32, testRotrV128, ch, testCh, maj, testMaj, ep0, testEp0, ep1, testEp1, sig0, testSig0, sig1, testSig1, testLoadbe32V128, hash4Inputs, digest64, hash8HashObjects} from "../../src/index.js";
+import {hash4Inputs, digest64, hash8HashObjects} from "../../src/index.js";
 import { byteArrayToHashObject, hashObjectToByteArray } from "../../src/hashObject.js";
 
 describe("Test assemblyscript", () => {
-  it("rotr", () => {
-    for (let i = 0; i < 10_000; i++) {
-      const value = Math.floor(Math.random() * 0xFFFFFFFF);
-      for (let bits = 0; bits < 31; bits++) {
-        expect(rotrU32(value, bits)).equal(testRotrV128(value, bits));
-      }
-    }
-  });
-
-  it("ch", () => {
-    for (let i = 0; i < 10_000; i++) {
-      const x = Math.floor(Math.random() * 0xFFFFFFFF);
-      const y = Math.floor(Math.random() * 0xFFFFFFFF);
-      const z = Math.floor(Math.random() * 0xFFFFFFFF);
-      expect(ch(x, y, z)).equal(testCh(x, y, z));
-    }
-  });
-
-  it("maj", () => {
-    for (let i = 0; i < 10_000; i++) {
-      const x = Math.floor(Math.random() * 0xFFFFFFFF);
-      const y = Math.floor(Math.random() * 0xFFFFFFFF);
-      const z = Math.floor(Math.random() * 0xFFFFFFFF);
-      expect(maj(x, y, z)).equal(testMaj(x, y, z));
-    }
-  });
-
-  it("ep0", () => {
-    for (let i = 0; i < 10_000; i++) {
-      const x = Math.floor(Math.random() * 0xFFFFFFFF);
-      expect(ep0(x)).equal(testEp0(x));
-    }
-  });
-
-  it("ep1", () => {
-    for (let i = 0; i < 10_000; i++) {
-      const x = Math.floor(Math.random() * 0xFFFFFFFF);
-      expect(ep1(x)).equal(testEp1(x));
-    }
-  });
-
-  it("sig0", () => {
-    for (let i = 0; i < 10_000; i++) {
-      const x = Math.floor(Math.random() * 0xFFFFFFFF);
-      expect(sig0(x)).equal(testSig0(x));
-    }
-  });
-
-  it("sig1", () => {
-    for (let i = 0; i < 10_000; i++) {
-      const x = Math.floor(Math.random() * 0xFFFFFFFF);
-      expect(sig1(x)).equal(testSig1(x));
-    }
-  });
-
-  it("testLoadbe32V128", () => {
-    for (let i = 0; i < 10_000; i++) {
-      const x = Math.floor(Math.random() * 0xFFFFFFFF);
-      expect(testLoadbe32V128(x)).equal(toBigEndian(x));
-    }
-  });
 
   it("test digest64", () => {
     const input1 = "gajindergajindergajindergajinder";

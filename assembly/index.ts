@@ -18,51 +18,6 @@ export function add(a: i32, b: i32): i32 {
   return a + b;
 }
 
-
-export function addFloatVectors(a: v128, b: v128): v128 {
-  return f32x4.add(a, b);
-}
-
-// Example usage with constants for demonstration
-export function addSampleVectors(): v128 {
-  // Create a vector with all elements set to 1.0
-  const vec1: v128 = f32x4.splat(1.0);
-  // Create a vector with all elements set to 2.0
-  const vec2: v128 = f32x4.splat(2.0);
-  return addFloatVectors(vec1, vec2);
-}
-
-/**
- * h${i} is a 512-bit input = 64 bytes
- *
- *         h0 h1 h2 h3 h4 h5 h6 h7 h8 h9 h10 h11 h12 h13 h14 h15
- * v128_0  |  |  |  |  |  |  |  |  |  |  |   |   |   |   |   |
- * v128_1  |  |  |  |  |  |  |  |  |  |  |   |   |   |   |   |
- * ...
- * v128_62 |  |  |  |  |  |  |  |  |  |  |   |   |   |   |   |
- * v128_63 |  |  |  |  |  |  |  |  |  |  |   |   |   |   |   |
- */
-export function xor16Inputs(): void {
-  // data should be ready in input buffer
-  // each hash input has exactly 64 bytes => we have 64 vInput
-  const vInputs: v128[] = [];
-  // cannot do the loop here, otherwise get "AS220: Expression must be a compile-time constant."
-  vInputs.push(v128.load(inputPtr, 16 * 0));
-  vInputs.push(v128.load(inputPtr, 16 * 1));
-  vInputs.push(v128.load(inputPtr, 16 * 2));
-  vInputs.push(v128.load(inputPtr, 16 * 3));
-
-  // xor v0 to v33, v1 to v34 etc to get result
-  // for (let i = 0; i < 32; i++) {
-  //   // vOutputs.push(v128.xor(vInputs[i], vInputs[i + 32]));
-  //   const vOutput = v128.xor(vInputs[i], vInputs[i + 32]);
-  //   v128.store(outputPtr, vOutput, i * 16);
-  // }
-
-  v128.store(outputPtr, v128.xor(vInputs[0], vInputs[1]), 0 * 16);
-  v128.store(outputPtr, v128.xor(vInputs[2], vInputs[3]), 1 * 16);
-}
-
 const K: u32[] = [
   0x428a2f98, 0x71374491, 0xb5c0fbcf, 0xe9b5dba5, 0x3956c25b,
   0x59f111f1, 0x923f82a4, 0xab1c5ed5, 0xd807aa98, 0x12835b01,
@@ -152,16 +107,25 @@ export function init(): void {
   bytesHashed  = 0;
 }
 
+const DEFAULT_H0V128 = i32x4.splat(0x6a09e667);
+const DEFAULT_H1V128 = i32x4.splat(0xbb67ae85);
+const DEFAULT_H2V128 = i32x4.splat(0x3c6ef372);
+const DEFAULT_H3V128 = i32x4.splat(0xa54ff53a);
+const DEFAULT_H4V128 = i32x4.splat(0x510e527f);
+const DEFAULT_H5V128 = i32x4.splat(0x9b05688c);
+const DEFAULT_H6V128 = i32x4.splat(0x1f83d9ab);
+const DEFAULT_H7V128 = i32x4.splat(0x5be0cd19);
+
 // TODO: is it needed to export this function
 export function initV128(): void {
-  H0V128 = i32x4.splat(0x6a09e667);
-  H1V128 = i32x4.splat(0xbb67ae85);
-  H2V128 = i32x4.splat(0x3c6ef372);
-  H3V128 = i32x4.splat(0xa54ff53a);
-  H4V128 = i32x4.splat(0x510e527f);
-  H5V128 = i32x4.splat(0x9b05688c);
-  H6V128 = i32x4.splat(0x1f83d9ab);
-  H7V128 = i32x4.splat(0x5be0cd19);
+  H0V128 = DEFAULT_H0V128;
+  H1V128 = DEFAULT_H1V128;
+  H2V128 = DEFAULT_H2V128;
+  H3V128 = DEFAULT_H3V128;
+  H4V128 = DEFAULT_H4V128;
+  H5V128 = DEFAULT_H5V128;
+  H6V128 = DEFAULT_H6V128;
+  H7V128 = DEFAULT_H7V128;
 }
 
 /**
@@ -250,6 +214,7 @@ export function hashBlocksV128(wV128Arr: v128[], mV128Arr: v128[]): void {
   gV128 = H6V128;
   hV128 = H7V128;
 
+  // TODO: this is not parallel operators, need to use v128.load and work on bytes
   for (let i = 0; i < 16; i++) {
     wV128Arr[i] = load32beV128(mV128Arr[i]);
   }
@@ -462,137 +427,58 @@ export function CH(x: u32, y: u32, z: u32): u32 {
   return((x & y) ^ (~x & z));
 }
 
+@inline
 export function CHV128(x: v128, y: v128, z: v128): v128 {
-  const a = v128.and(x, y);
-  const b = v128.and(v128.not(x), z);
-  return v128.xor(a, b);
+  return v128.xor(v128.and(x, y), v128.and(v128.not(x), z));
 }
 
 export function MAJ(x: u32, y: u32, z:u32): u32 {
   return ((x & y) ^ (x & z) ^ (y & z));
 }
 
+@inline
 export function MAJV128(x: v128, y: v128, z: v128): v128 {
-  const a = v128.and(x, y);
-  const b = v128.and(x, z);
-  const c = v128.and(y, z);
-  return v128.xor(v128.xor(a, b), c);
+  return v128.xor(v128.xor(v128.and(x, y), v128.and(x, z)), v128.and(y, z));
 }
 
 export function EP0(x: u32): u32 {
   return rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22);
 }
 
+@inline
 export function EP0V128(x: v128): v128 {
-  const a = rotrV128(x, 2);
-  const b = rotrV128(x, 13);
-  const c = rotrV128(x, 22);
-  return v128.xor(v128.xor(a, b), c);
+  return v128.xor(v128.xor(rotrV128(x, 2), rotrV128(x, 13)), rotrV128(x, 22));
 }
 
 export function EP1(x: u32): u32 {
   return rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25);
 }
 
+@inline
 export function EP1V128(x: v128): v128 {
-  const a = rotrV128(x, 6);
-  const b = rotrV128(x, 11);
-  const c = rotrV128(x, 25);
-  return v128.xor(v128.xor(a, b), c);
+  return v128.xor(v128.xor(rotrV128(x, 6), rotrV128(x, 11)), rotrV128(x, 25));
 }
 
 export function SIG0(x: u32): u32 {
   return rotr(x, 7) ^ rotr(x, 18) ^ (x >>> 3);
 }
 
+@inline
 export function SIG0V128(x: v128): v128 {
-  const a = rotrV128(x, 7);
-  const b = rotrV128(x, 18);
-  const c = i32x4.shr_u(x, 3);
-  return v128.xor(v128.xor(a, b), c);
+  return v128.xor(v128.xor(rotrV128(x, 7), rotrV128(x, 18)), i32x4.shr_u(x, 3));
 }
 
 export function SIG1(x: u32): u32 {
   return rotr(x, 17) ^ rotr(x, 19) ^ (x >>> 10);
 }
 
+@inline
 export function SIG1V128(x: v128): v128 {
-  const a = rotrV128(x, 17);
-  const b = rotrV128(x, 19);
-  const c = i32x4.shr_u(x, 10);
-  return v128.xor(v128.xor(a, b), c);
+  return v128.xor(v128.xor(rotrV128(x, 17), rotrV128(x, 19)), i32x4.shr_u(x, 10));
 }
 
 export function rotrU32(value: u32, bits: i32): u32 {
   return rotr(value, bits);
-}
-
-/////////////////////////////////////////////////////////
-// Below is test utilities, should be removed after all
-/////////////////////////////////////////////////////////
-export function testCh(x: u32, y: u32, z: u32): u32 {
-  const x2 = i32x4.splat(x);
-  const y2 = i32x4.splat(y);
-  const z2 = i32x4.splat(z);
-  const resultV128 = CHV128(x2, y2, z2);
-  return extractLane0(resultV128);
-}
-
-export function testMaj(x: u32, y: u32, z: u32): u32 {
-  const x2 = i32x4.splat(x);
-  const y2 = i32x4.splat(y);
-  const z2 = i32x4.splat(z);
-  const resultV128 = MAJV128(x2, y2, z2);
-  return extractLane0(resultV128);
-}
-
-
-export function testEp0(value: u32): u32 {
-  const v128 = i32x4.splat(value);
-  const resultV128 = EP0V128(v128);
-  return extractLane0(resultV128);
-}
-
-export function testEp1(value: u32): u32 {
-  const v128 = i32x4.splat(value);
-  const resultV128 = EP1V128(v128);
-  return extractLane0(resultV128);
-}
-
-export function testSig0(value: u32): u32 {
-  const v128 = i32x4.splat(value);
-  const resultV128 = SIG0V128(v128);
-  return extractLane0(resultV128);
-}
-
-export function testSig1(value: u32): u32 {
-  const v128 = i32x4.splat(value);
-  const resultV128 = SIG1V128(v128);
-  return extractLane0(resultV128);
-}
-
-export function testRotrV128(value: u32, bits: i32): u32 {
-  const v128 = i32x4.splat(value);
-  const resultV128 = rotrV128(v128, bits);
-  return extractLane0(resultV128);
-}
-
-export function testLoadbe32V128(value: u32): u32 {
-  const v128 = i32x4.splat(value);
-  const resultV128 = load32beV128(v128);
-  return extractLane0(resultV128);
-}
-
-function extractLane0(v128: v128): u32 {
-  const lane0 = i32x4.extract_lane(v128, 0);
-  const lane1 = i32x4.extract_lane(v128, 1);
-  const lane2 = i32x4.extract_lane(v128, 2);
-  const lane3 = i32x4.extract_lane(v128, 3);
-
-  if (lane0 !== lane1 || lane0 !== lane2 || lane0 !== lane3) {
-    throw new Error("rotrV128 failed");
-  }
-  return lane0;
 }
 
 /**
@@ -601,6 +487,7 @@ function extractLane0(v128: v128): u32 {
  * @param bits
  * @returns
  */
+@inline
 function rotrV128(value: v128, bits: i32): v128 {
   const maskBits = 32 - bits;
 
