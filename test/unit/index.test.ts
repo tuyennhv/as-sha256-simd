@@ -1,6 +1,7 @@
 import {expect} from "chai";
 import crypto from "crypto";
-import {rotrU32, testRotrV128, ch, testCh, maj, testMaj, ep0, testEp0, ep1, testEp1, sig0, testSig0, sig1, testSig1, testLoadbe32V128, hash4Inputs, digest64} from "../../src/index.js";
+import {rotrU32, testRotrV128, ch, testCh, maj, testMaj, ep0, testEp0, ep1, testEp1, sig0, testSig0, sig1, testSig1, testLoadbe32V128, hash4Inputs, digest64, hash8HashObjects} from "../../src/index.js";
+import { byteArrayToHashObject, hashObjectToByteArray } from "../../src/hashObject.js";
 
 describe("Test assemblyscript", () => {
   it("rotr", () => {
@@ -103,6 +104,20 @@ describe("Test assemblyscript", () => {
     }
   });
 
+  it("testHash4HashObjects", () => {
+    const input1 = "gajindergajindergajindergajinder";
+    const inputHashObject = byteArrayToHashObject(Buffer.from(input1, "utf8"));
+    const outputs = hash8HashObjects(Array.from({length: 8}, () => inputHashObject));
+    const expectedOutput = new Uint8Array([
+      190, 57, 56, 15, 241, 208, 38, 30, 111, 55, 218, 254, 66, 120, 182, 98, 239, 97, 31, 28, 178, 247, 192, 161,
+      131, 72, 178, 215, 235, 20, 207, 110,
+    ]);
+    for (let i = 0; i < 4; i++) {
+      const output = new Uint8Array(32);
+      hashObjectToByteArray(outputs[i], output, 0);
+      expect(output).to.be.deep.equal(expectedOutput, "incorrect hash4Inputs result " + i);
+    }
+  });
 });
 
 function toBigEndian(value: number): number {

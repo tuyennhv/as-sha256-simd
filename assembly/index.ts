@@ -378,7 +378,7 @@ export function digest64(inPtr: usize, outPtr: usize): void {
   store32(outPtr, 7, bswap(H7));
 }
 
-export function digest64V128(inPtr: usize, outPtr: usize): void {
+export function hash4Inputs(inPtr: usize, outPtr: usize): void {
   // inPtr is 64 bytes each x 4 (PARALLEL_FACTOR) = 256 bytes
   // TODO: reuse i
   for (let i = 0; i < 16; i++) {
@@ -387,6 +387,33 @@ export function digest64V128(inPtr: usize, outPtr: usize): void {
     inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 2, load32(inPtr, 32 + i));
     inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 3, load32(inPtr, 48 + i));
   }
+
+  digest64V128(inPtr, outPtr);
+}
+
+export function hash4HashObjects(inPtr: usize, outPtr: usize): void {
+  // cannot do the loop here, otherwise get "Expression must be a compile-time constant."
+  inV128Arr[0] = v128.load(inPtr, 0);
+  inV128Arr[1] = v128.load(inPtr, 16);
+  inV128Arr[2] = v128.load(inPtr, 32);
+  inV128Arr[3] = v128.load(inPtr, 48);
+  inV128Arr[4] = v128.load(inPtr, 64);
+  inV128Arr[5] = v128.load(inPtr, 80);
+  inV128Arr[6] = v128.load(inPtr, 96);
+  inV128Arr[7] = v128.load(inPtr, 112);
+  inV128Arr[8] = v128.load(inPtr, 128);
+  inV128Arr[9] = v128.load(inPtr, 144);
+  inV128Arr[10] = v128.load(inPtr, 160);
+  inV128Arr[11] = v128.load(inPtr, 176);
+  inV128Arr[12] = v128.load(inPtr, 192);
+  inV128Arr[13] = v128.load(inPtr, 208);
+  inV128Arr[14] = v128.load(inPtr, 224);
+  inV128Arr[15] = v128.load(inPtr, 240);
+
+  digest64V128(inPtr, outPtr);
+}
+
+export function digest64V128(inPtr: usize, outPtr: usize): void {
   initV128();
   hashBlocksV128(WV128, inV128Arr);
   hashPreCompWV128(W64V128);

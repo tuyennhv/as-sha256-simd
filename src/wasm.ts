@@ -21,7 +21,8 @@ export interface WasmContext {
 
   // digest(length: number): void;
   digest64(inPtr: number, outPtr: number): void;
-  digest64V128(inPtr: number, outPtr: number): void;
+  hash4Inputs(inPtr: number, outPtr: number): void;
+  hash4HashObjects(inPtr: number, outPtr: number): void;
 
   CH(x: number, y: number, z: number): number;
   testCh(x: number, y: number, z: number): number;
