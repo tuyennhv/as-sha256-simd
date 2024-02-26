@@ -226,7 +226,7 @@ function hashBlocksV128(): void {
   // Apply SHA256 compression function on expanded message blocks
   for (i = 0; i < 64; i++) {
     // t1 = h + EP1(e) + CH(e, f, g) + load32(kPtr, i) + load32(wPtr, i);
-    t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getVV128(kV128Ptr, i)), getVV128(wInputPtr, i));
+    t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getV128(kV128Ptr, i)), getV128(wInputPtr, i));
     // t2 = EP0(a) + MAJ(a, b, c);
     t2V128 = i32x4.add(EP0V128(aV128), MAJV128(aV128, bV128, cV128));
     // h = g;
@@ -259,139 +259,139 @@ function hashBlocksV128(): void {
 
 // work around this error: "ERROR AS220: Expression must be a compile-time constant."
 @inline
-function getVV128(ptr: usize, i: i32): v128 {
-  if (i === 0) {
-    return v128.load(ptr, 0);
-  } else if (i === 1) {
-    return v128.load(ptr, 16);
-  } else if (i === 2) {
-    return v128.load(ptr, 32);
-  } else if (i === 3) {
-    return v128.load(ptr, 48);
-  } else if (i === 4) {
-    return v128.load(ptr, 64);
-  } else if (i === 5) {
-    return v128.load(ptr, 80);
-  } else if (i === 6) {
-    return v128.load(ptr, 96);
-  } else if (i === 7) {
-    return v128.load(ptr, 112);
-  } else if (i === 8) {
-    return v128.load(ptr, 128);
-  } else if (i === 9) {
-    return v128.load(ptr, 144);
-  } else if (i === 10) {
-    return v128.load(ptr, 160);
-  } else if (i === 11) {
-    return v128.load(ptr, 176);
-  } else if (i === 12) {
-    return v128.load(ptr, 192);
-  } else if (i === 13) {
-    return v128.load(ptr, 208);
-  } else if (i === 14) {
-    return v128.load(ptr, 224);
-  } else if (i === 15) {
-    return v128.load(ptr, 240);
-  } else if (i === 16) {
-    return v128.load(ptr, 256);
-  } else if (i === 17) {
-    return v128.load(ptr, 272);
-  } else if (i === 18) {
-    return v128.load(ptr, 288);
-  } else if (i === 19) {
-    return v128.load(ptr, 304);
-  } else if (i === 20) {
-    return v128.load(ptr, 320);
-  } else if (i === 21) {
-    return v128.load(ptr, 336);
-  } else if (i === 22) {
-    return v128.load(ptr, 352);
-  } else if (i === 23) {
-    return v128.load(ptr, 368);
-  } else if (i === 24) {
-    return v128.load(ptr, 384);
-  } else if (i === 25) {
-    return v128.load(ptr, 400);
-  } else if (i === 26) {
-    return v128.load(ptr, 416);
-  } else if (i === 27) {
-    return v128.load(ptr, 432);
-  } else if (i === 28) {
-    return v128.load(ptr, 448);
-  } else if (i === 29) {
-    return v128.load(ptr, 464);
-  } else if (i === 30) {
-    return v128.load(ptr, 480);
-  } else if (i === 31) {
-    return v128.load(ptr, 496);
-  } else if (i === 32) {
-    return v128.load(ptr, 512);
-  } else if (i === 33) {
-    return v128.load(ptr, 528);
-  } else if (i === 34) {
-    return v128.load(ptr, 544);
-  } else if (i === 35) {
-    return v128.load(ptr, 560);
-  } else if (i === 36) {
-    return v128.load(ptr, 576);
-  } else if (i === 37) {
-    return v128.load(ptr, 592);
-  } else if (i === 38) {
-    return v128.load(ptr, 608);
-  } else if (i === 39) {
-    return v128.load(ptr, 624);
-  } else if (i === 40) {
-    return v128.load(ptr, 640);
-  } else if (i === 41) {
-    return v128.load(ptr, 656);
-  } else if (i === 42) {
-    return v128.load(ptr, 672);
-  } else if (i === 43) {
-    return v128.load(ptr, 688);
-  } else if (i === 44) {
-    return v128.load(ptr, 704);
-  } else if (i === 45) {
-    return v128.load(ptr, 720);
-  } else if (i === 46) {
-    return v128.load(ptr, 736);
-  } else if (i === 47) {
-    return v128.load(ptr, 752);
-  } else if (i === 48) {
-    return v128.load(ptr, 768);
-  } else if (i === 49) {
-    return v128.load(ptr, 784);
-  } else if (i === 50) {
-    return v128.load(ptr, 800);
-  } else if (i === 51) {
-    return v128.load(ptr, 816);
-  } else if (i === 52) {
-    return v128.load(ptr, 832);
-  } else if (i === 53) {
-    return v128.load(ptr, 848);
-  } else if (i === 54) {
-    return v128.load(ptr, 864);
-  } else if (i === 55) {
-    return v128.load(ptr, 880);
-  } else if (i === 56) {
-    return v128.load(ptr, 896);
-  } else if (i === 57) {
-    return v128.load(ptr, 912);
-  } else if (i === 58) {
-    return v128.load(ptr, 928);
-  } else if (i === 59) {
-    return v128.load(ptr, 944);
-  } else if (i === 60) {
-    return v128.load(ptr, 960);
-  } else if (i === 61) {
-    return v128.load(ptr, 976);
-  } else if (i === 62) {
-    return v128.load(ptr, 992);
-  } else if (i === 63) {
-    return v128.load(ptr, 1008);
+function getV128(ptr: usize, i: i32): v128 {
+  switch (i) {
+    case 0:
+      return v128.load(ptr, 0);
+    case 1:
+      return v128.load(ptr, 16);
+    case 2:
+      return v128.load(ptr, 32);
+    case 3:
+      return v128.load(ptr, 48);
+    case 4:
+      return v128.load(ptr, 64);
+    case 5:
+      return v128.load(ptr, 80);
+    case 6:
+      return v128.load(ptr, 96);
+    case 7:
+      return v128.load(ptr, 112);
+    case 8:
+      return v128.load(ptr, 128);
+    case 9:
+      return v128.load(ptr, 144);
+    case 10:
+      return v128.load(ptr, 160);
+    case 11:
+      return v128.load(ptr, 176);
+    case 12:
+      return v128.load(ptr, 192);
+    case 13:
+      return v128.load(ptr, 208);
+    case 14:
+      return v128.load(ptr, 224);
+    case 15:
+      return v128.load(ptr, 240);
+    case 16:
+      return v128.load(ptr, 256);
+    case 17:
+      return v128.load(ptr, 272);
+    case 18:
+      return v128.load(ptr, 288);
+    case 19:
+      return v128.load(ptr, 304);
+    case 20:
+      return v128.load(ptr, 320);
+    case 21:
+      return v128.load(ptr, 336);
+    case 22:
+      return v128.load(ptr, 352);
+    case 23:
+      return v128.load(ptr, 368);
+    case 24:
+      return v128.load(ptr, 384);
+    case 25:
+      return v128.load(ptr, 400);
+    case 26:
+      return v128.load(ptr, 416);
+    case 27:
+      return v128.load(ptr, 432);
+    case 28:
+      return v128.load(ptr, 448);
+    case 29:
+      return v128.load(ptr, 464);
+    case 30:
+      return v128.load(ptr, 480);
+    case 31:
+      return v128.load(ptr, 496);
+    case 32:
+      return v128.load(ptr, 512);
+    case 33:
+      return v128.load(ptr, 528);
+    case 34:
+      return v128.load(ptr, 544);
+    case 35:
+      return v128.load(ptr, 560);
+    case 36:
+      return v128.load(ptr, 576);
+    case 37:
+      return v128.load(ptr, 592);
+    case 38:
+      return v128.load(ptr, 608);
+    case 39:
+      return v128.load(ptr, 624);
+    case 40:
+      return v128.load(ptr, 640);
+    case 41:
+      return v128.load(ptr, 656);
+    case 42:
+      return v128.load(ptr, 672);
+    case 43:
+      return v128.load(ptr, 688);
+    case 44:
+      return v128.load(ptr, 704);
+    case 45:
+      return v128.load(ptr, 720);
+    case 46:
+      return v128.load(ptr, 736);
+    case 47:
+      return v128.load(ptr, 752);
+    case 48:
+      return v128.load(ptr, 768);
+    case 49:
+      return v128.load(ptr, 784);
+    case 50:
+      return v128.load(ptr, 800);
+    case 51:
+      return v128.load(ptr, 816);
+    case 52:
+      return v128.load(ptr, 832);
+    case 53:
+      return v128.load(ptr, 848);
+    case 54:
+      return v128.load(ptr, 864);
+    case 55:
+      return v128.load(ptr, 880);
+    case 56:
+      return v128.load(ptr, 896);
+    case 57:
+      return v128.load(ptr, 912)
+    case 58:
+      return v128.load(ptr, 928);
+    case 59:
+      return v128.load(ptr, 944);
+    case 60:
+      return v128.load(ptr, 960);
+    case 61:
+      return v128.load(ptr, 976);
+    case 62:
+      return v128.load(ptr, 992);
+    case 63:
+      return v128.load(ptr, 1008);
+    default:
+      return i32x4.splat(0);
   }
-  // TODO: convert to switch case?
-
-  return i32x4.splat(0);
 }
 
 function hashPreCompW(wPtr: usize): void {
