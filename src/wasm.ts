@@ -11,6 +11,9 @@ export interface WasmContext {
   input: {
     value: number;
   };
+  wInput: {
+    value: number;
+  };
   output: {
     value: number;
   };
@@ -21,8 +24,8 @@ export interface WasmContext {
 
   // digest(length: number): void;
   digest64(inPtr: number, outPtr: number): void;
-  hash4Inputs(inPtr: number, outPtr: number): void;
-  hash8HashObjects(inPtr: number, outPtr: number): void;
+  hash4Inputs(outPtr: number): void;
+  hash8HashObjects(outPtr: number): void;
 }
 
 const importObj = {

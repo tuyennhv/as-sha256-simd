@@ -1,5 +1,5 @@
-export const PARALLEL_FACTOR = 16;
-// 64 bytes = 512 bits = 1 block
+export const PARALLEL_FACTOR = 4;
+// 64 bytes = 512 bits = 1 block, this is 256 bytes
 export const INPUT_LENGTH = 64 * PARALLEL_FACTOR;
 const DIGEST_LENGTH = 32 * PARALLEL_FACTOR;
 
@@ -10,6 +10,10 @@ declare function logValue(value: u32): void;
 // input buffer
 export const input = new ArrayBuffer(INPUT_LENGTH);
 const inputPtr = changetype<usize>(input);
+
+// expanded block is 64 * 4 bytes = 256 bytes, which is 4x the block
+export const wInput = new ArrayBuffer(4 * INPUT_LENGTH);
+const wInputPtr = changetype<usize>(wInput);
 
 // output buffer
 export const output = new ArrayBuffer(DIGEST_LENGTH);
@@ -34,7 +38,15 @@ const K: u32[] = [
   0x90befffa, 0xa4506ceb, 0xbef9a3f7, 0xc67178f2
 ];
 
-const KV128: v128[] = K.map((k: u32) => i32x4.splat(k));
+// 4 x K.length
+const kV128ArrayBuffer = new ArrayBuffer(4 * 64 * PARALLEL_FACTOR);
+const kV128Ptr = changetype<usize>(kV128ArrayBuffer);
+for (let i = 0; i < 64; i++) {
+  store32(kV128Ptr, i * 4, K[i]);
+  store32(kV128Ptr, i * 4 + 1, K[i]);
+  store32(kV128Ptr, i * 4 + 2, K[i]);
+  store32(kV128Ptr, i * 4 + 3, K[i]);
+}
 
 const kPtr = K.dataStart;
 
@@ -59,6 +71,7 @@ const W64: u32[] = [
 ];
 const w64Ptr = W64.dataStart;
 
+// not sure why turning this into pointer (like K) make it slower
 const W64V128: v128[] = W64.map((w: u32) => i32x4.splat(w));
 
 // intermediate hash values stored in H0-H7
@@ -71,11 +84,6 @@ let aV128: v128, bV128: v128, cV128: v128, dV128: v128, eV128: v128, fV128: v128
 const WV128: v128[] = [];
 for (i = 0; i < 64; i++) {
   WV128.push(i32x4.splat(0));
-}
-
-const inV128Arr: v128[] = [];
-for (i = 0; i < 16; i++) {
-  inV128Arr.push(i32x4.splat(0));
 }
 
 // 16 32bit message blocks
@@ -218,7 +226,7 @@ function hashBlocksV128(): void {
   // Apply SHA256 compression function on expanded message blocks
   for (i = 0; i < 64; i++) {
     // t1 = h + EP1(e) + CH(e, f, g) + load32(kPtr, i) + load32(wPtr, i);
-    t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), KV128[i]), WV128[i]);
+    t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getVV128(kV128Ptr, i)), getVV128(wInputPtr, i));
     // t2 = EP0(a) + MAJ(a, b, c);
     t2V128 = i32x4.add(EP0V128(aV128), MAJV128(aV128, bV128, cV128));
     // h = g;
@@ -247,6 +255,143 @@ function hashBlocksV128(): void {
   H5V128 = i32x4.add(H5V128, fV128);
   H6V128 = i32x4.add(H6V128, gV128);
   H7V128 = i32x4.add(H7V128, hV128);
+}
+
+// work around this error: "ERROR AS220: Expression must be a compile-time constant."
+@inline
+function getVV128(ptr: usize, i: i32): v128 {
+  if (i === 0) {
+    return v128.load(ptr, 0);
+  } else if (i === 1) {
+    return v128.load(ptr, 16);
+  } else if (i === 2) {
+    return v128.load(ptr, 32);
+  } else if (i === 3) {
+    return v128.load(ptr, 48);
+  } else if (i === 4) {
+    return v128.load(ptr, 64);
+  } else if (i === 5) {
+    return v128.load(ptr, 80);
+  } else if (i === 6) {
+    return v128.load(ptr, 96);
+  } else if (i === 7) {
+    return v128.load(ptr, 112);
+  } else if (i === 8) {
+    return v128.load(ptr, 128);
+  } else if (i === 9) {
+    return v128.load(ptr, 144);
+  } else if (i === 10) {
+    return v128.load(ptr, 160);
+  } else if (i === 11) {
+    return v128.load(ptr, 176);
+  } else if (i === 12) {
+    return v128.load(ptr, 192);
+  } else if (i === 13) {
+    return v128.load(ptr, 208);
+  } else if (i === 14) {
+    return v128.load(ptr, 224);
+  } else if (i === 15) {
+    return v128.load(ptr, 240);
+  } else if (i === 16) {
+    return v128.load(ptr, 256);
+  } else if (i === 17) {
+    return v128.load(ptr, 272);
+  } else if (i === 18) {
+    return v128.load(ptr, 288);
+  } else if (i === 19) {
+    return v128.load(ptr, 304);
+  } else if (i === 20) {
+    return v128.load(ptr, 320);
+  } else if (i === 21) {
+    return v128.load(ptr, 336);
+  } else if (i === 22) {
+    return v128.load(ptr, 352);
+  } else if (i === 23) {
+    return v128.load(ptr, 368);
+  } else if (i === 24) {
+    return v128.load(ptr, 384);
+  } else if (i === 25) {
+    return v128.load(ptr, 400);
+  } else if (i === 26) {
+    return v128.load(ptr, 416);
+  } else if (i === 27) {
+    return v128.load(ptr, 432);
+  } else if (i === 28) {
+    return v128.load(ptr, 448);
+  } else if (i === 29) {
+    return v128.load(ptr, 464);
+  } else if (i === 30) {
+    return v128.load(ptr, 480);
+  } else if (i === 31) {
+    return v128.load(ptr, 496);
+  } else if (i === 32) {
+    return v128.load(ptr, 512);
+  } else if (i === 33) {
+    return v128.load(ptr, 528);
+  } else if (i === 34) {
+    return v128.load(ptr, 544);
+  } else if (i === 35) {
+    return v128.load(ptr, 560);
+  } else if (i === 36) {
+    return v128.load(ptr, 576);
+  } else if (i === 37) {
+    return v128.load(ptr, 592);
+  } else if (i === 38) {
+    return v128.load(ptr, 608);
+  } else if (i === 39) {
+    return v128.load(ptr, 624);
+  } else if (i === 40) {
+    return v128.load(ptr, 640);
+  } else if (i === 41) {
+    return v128.load(ptr, 656);
+  } else if (i === 42) {
+    return v128.load(ptr, 672);
+  } else if (i === 43) {
+    return v128.load(ptr, 688);
+  } else if (i === 44) {
+    return v128.load(ptr, 704);
+  } else if (i === 45) {
+    return v128.load(ptr, 720);
+  } else if (i === 46) {
+    return v128.load(ptr, 736);
+  } else if (i === 47) {
+    return v128.load(ptr, 752);
+  } else if (i === 48) {
+    return v128.load(ptr, 768);
+  } else if (i === 49) {
+    return v128.load(ptr, 784);
+  } else if (i === 50) {
+    return v128.load(ptr, 800);
+  } else if (i === 51) {
+    return v128.load(ptr, 816);
+  } else if (i === 52) {
+    return v128.load(ptr, 832);
+  } else if (i === 53) {
+    return v128.load(ptr, 848);
+  } else if (i === 54) {
+    return v128.load(ptr, 864);
+  } else if (i === 55) {
+    return v128.load(ptr, 880);
+  } else if (i === 56) {
+    return v128.load(ptr, 896);
+  } else if (i === 57) {
+    return v128.load(ptr, 912);
+  } else if (i === 58) {
+    return v128.load(ptr, 928);
+  } else if (i === 59) {
+    return v128.load(ptr, 944);
+  } else if (i === 60) {
+    return v128.load(ptr, 960);
+  } else if (i === 61) {
+    return v128.load(ptr, 976);
+  } else if (i === 62) {
+    return v128.load(ptr, 992);
+  } else if (i === 63) {
+    return v128.load(ptr, 1008);
+  }
+  // TODO: convert to switch case?
+
+  return i32x4.splat(0);
 }
 
 function hashPreCompW(wPtr: usize): void {
@@ -332,36 +477,34 @@ export function digest64(inPtr: usize, outPtr: usize): void {
   store32(outPtr, 7, bswap(H7));
 }
 
-export function hash4Inputs(inPtr: usize, outPtr: usize): void {
-  // inPtr is 64 bytes each x 4 (PARALLEL_FACTOR) = 256 bytes
+export function hash4Inputs(outPtr: usize): void {
+  // transform input differently than hash8HashObjects
+  // inputPtr is like
+  // byte                   u32
+  // 0 1 2 ... 63      ===> 0   1 ... 15
+  // 64 65 ... 127     ===> 16 17 ... 31
+  // 128 ... 191       ===> 32 33 ... 47
+  // 192 ... 255       ===> 48 49 ... 63
+
+  // transform to
+  // 0 16 32 48
+  // 1 17 33 49
+  // ...
+  // 15 31 47 63
   for (i = 0; i < 16; i++) {
-    inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 0, load32(inPtr, 0 + i));
-    inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 1, load32(inPtr, 16 + i));
-    inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 2, load32(inPtr, 32 + i));
-    inV128Arr[i] = i32x4.replace_lane(inV128Arr[i], 3, load32(inPtr, 48 + i));
+    store32(wInputPtr, PARALLEL_FACTOR * i, load32be(inputPtr, i));
+    store32(wInputPtr, PARALLEL_FACTOR * i + 1, load32be(inputPtr, i + 16));
+    store32(wInputPtr, PARALLEL_FACTOR * i + 2, load32be(inputPtr, i + 32));
+    store32(wInputPtr, PARALLEL_FACTOR * i + 3, load32be(inputPtr, i + 48));
   }
 
   digest64V128(outPtr);
 }
 
-export function hash8HashObjects(inPtr: usize, outPtr: usize): void {
-  // cannot do the loop here, otherwise get "Expression must be a compile-time constant."
-  inV128Arr[0] = v128.load(inPtr, 0);
-  inV128Arr[1] = v128.load(inPtr, 16);
-  inV128Arr[2] = v128.load(inPtr, 32);
-  inV128Arr[3] = v128.load(inPtr, 48);
-  inV128Arr[4] = v128.load(inPtr, 64);
-  inV128Arr[5] = v128.load(inPtr, 80);
-  inV128Arr[6] = v128.load(inPtr, 96);
-  inV128Arr[7] = v128.load(inPtr, 112);
-  inV128Arr[8] = v128.load(inPtr, 128);
-  inV128Arr[9] = v128.load(inPtr, 144);
-  inV128Arr[10] = v128.load(inPtr, 160);
-  inV128Arr[11] = v128.load(inPtr, 176);
-  inV128Arr[12] = v128.load(inPtr, 192);
-  inV128Arr[13] = v128.load(inPtr, 208);
-  inV128Arr[14] = v128.load(inPtr, 224);
-  inV128Arr[15] = v128.load(inPtr, 240);
+export function hash8HashObjects(outPtr: usize): void {
+  for (i = 0; i < 16 * PARALLEL_FACTOR; i++) {
+    store32(wInputPtr, i, load32be(inputPtr, i));
+  }
 
   digest64V128(outPtr);
 }
@@ -369,14 +512,46 @@ export function hash8HashObjects(inPtr: usize, outPtr: usize): void {
 function digest64V128(outPtr: usize): void {
   initV128();
 
-  // TODO: this is not parallel operators, need to use v128.load and work on bytes
-  for (i = 0; i < 16; i++) {
-    WV128[i] = load32beV128(inV128Arr[i]);
-  }
+  // for (i = 0; i < 16; i++) {
+  //   WV128[i] = load32beV128(inV128Arr[i]);
+  // }
 
-  // Expand message blocks 17-64
+  // // Expand message blocks 17-64, this leverage SIMD however the created v128 array is not performant
+  // for (i = 16; i < 64; i++) {
+  //   WV128[i] = i32x4.add(i32x4.add(SIG1V128(WV128[i - 2]), WV128[i - 7]), i32x4.add(SIG0V128(WV128[i - 15]), WV128[i - 16]));
+  // }
+
+  // this is not SIMD however it is faster than the above
+  // set extended data for block
   for (i = 16; i < 64; i++) {
-    WV128[i] = i32x4.add(i32x4.add(SIG1V128(WV128[i - 2]), WV128[i - 7]), i32x4.add(SIG0V128(WV128[i - 15]), WV128[i - 16]));
+    // PARALLEL_FACTOR = 4
+    store32(wInputPtr, i * 4,
+      SIG1(load32(wInputPtr, (i - 2) * 4)) +
+      load32(wInputPtr, (i - 7) * 4) +
+      SIG0(load32(wInputPtr, (i - 15) * 4)) +
+      load32(wInputPtr, (i - 16) * 4)
+    );
+
+    store32(wInputPtr, i * 4 + 1,
+      SIG1(load32(wInputPtr, (i - 2) * 4 + 1)) +
+      load32(wInputPtr, (i - 7) * 4 + 1) +
+      SIG0(load32(wInputPtr, (i - 15) * 4 + 1)) +
+      load32(wInputPtr, (i - 16) * 4 + 1)
+    );
+
+    store32(wInputPtr, i * 4 + 2,
+      SIG1(load32(wInputPtr, (i - 2) * 4 + 2)) +
+      load32(wInputPtr, (i - 7) * 4 + 2) +
+      SIG0(load32(wInputPtr, (i - 15) * 4 + 2)) +
+      load32(wInputPtr, (i - 16) * 4 + 2)
+    );
+
+    store32(wInputPtr, i * 4 + 3,
+      SIG1(load32(wInputPtr, (i - 2) * 4 + 3)) +
+      load32(wInputPtr, (i - 7) * 4 + 3) +
+      SIG0(load32(wInputPtr, (i - 15) * 4 + 3)) +
+      load32(wInputPtr, (i - 16) * 4 + 3)
+    );
   }
 
   hashBlocksV128();
@@ -388,7 +563,6 @@ function digest64V128(outPtr: usize): void {
   store32(outPtr, 1, bswap(i32x4.extract_lane(H1V128, 0)));
   store32(outPtr, 2, bswap(i32x4.extract_lane(H2V128, 0)));
   store32(outPtr, 3, bswap(i32x4.extract_lane(H3V128, 0)));
-  // why this is not correct??
   store32(outPtr, 4, bswap(i32x4.extract_lane(H4V128, 0)));
   store32(outPtr, 5, bswap(i32x4.extract_lane(H5V128, 0)));
   store32(outPtr, 6, bswap(i32x4.extract_lane(H6V128, 0)));
