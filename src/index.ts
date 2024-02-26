@@ -33,7 +33,7 @@ export function digest64(data: Uint8Array): Uint8Array {
 
 /**
  * Hash 4 inputs, each 64 bytes
- * @param i0
+ * @param i0 64 byte Uint8Array
  * @param i1
  * @param i2
  * @param i3
@@ -42,13 +42,15 @@ export function hash4Inputs(i0: Uint8Array, i1: Uint8Array, i2: Uint8Array, i3: 
   if (i0.length !== HASH_INPUT_LENGTH || i1.length !== HASH_INPUT_LENGTH || i2.length !== HASH_INPUT_LENGTH || i3.length !== HASH_INPUT_LENGTH) {
     throw new Error(`Input length must be 64`);
   }
+
   // set up input buffer for v128
   inputUint8Array.set(i0, 0);
   inputUint8Array.set(i1, 64);
   inputUint8Array.set(i2, 128);
   inputUint8Array.set(i3, 192);
 
-  ctx.hash4Inputs(wasmInputValue, wasmOutputValue);
+
+  ctx.hash4Inputs(wasmOutputValue);
 
   const output0 = new Uint8Array(32);
   output0.set(outputUint8Array.subarray(0, 32));
@@ -63,8 +65,8 @@ export function hash4Inputs(i0: Uint8Array, i1: Uint8Array, i2: Uint8Array, i3: 
 }
 
 /**
- * Hash 8 HashObjects, h0 (16 bytes) + h1 = 1 input, h2 + h3 = 1 input
- * Same to hash4Inputs() above
+ * Hash 8 HashObjects:
+ * input${i} has h0 to h7, each 4 bytes which make it 32 bytes
  */
 export function hash8HashObjects(inputs: HashObject[]): HashObject[] {
   if (inputs.length !== 8) {
@@ -169,7 +171,7 @@ export function hash8HashObjects(inputs: HashObject[]): HashObject[] {
   inputUint32Array[62] = inputs[5].h7;
   inputUint32Array[63] = inputs[7].h7;
 
-  ctx.hash8HashObjects(wasmInputValue, wasmOutputValue);
+  ctx.hash8HashObjects(wasmOutputValue);
 
   const output0 = byteArrayToHashObject(outputUint8Array.subarray(0, 32));
   const output1 = byteArrayToHashObject(outputUint8Array.subarray(32, 64));
@@ -179,3 +181,4 @@ export function hash8HashObjects(inputs: HashObject[]): HashObject[] {
   return [output0, output1, output2, output3];
 }
 
+const rotr = (word: number, shift: number) => (word << (32 - shift)) | (word >>> shift);
