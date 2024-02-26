@@ -184,10 +184,10 @@ function hashBlocks(wPtr: usize, mPtr: usize): void {
 }
 
 /**
- * Expand message blocks (16 32bit blocks), into extended message blocks (64 32bit blocks),
+ * Expand message blocks (16 32bit blocks), into extended message blocks (64 32bit blocks) ==> this was done by the consumer
  * Apply SHA256 compression function on extended message blocks
  * Update intermediate hash values
- * @param wV128Arr 64 v128 objects respective to 4 expanded message blocks memory
+ * @param WV128 64 v128 objects respective to 4 expanded message blocks memory
  * @param mV12Arr 16 v128 objects respective to 4 message blocks memory
  *
  *                    block 0 (4 bytes)   block 1 (4 bytes)    block 2 (4 bytes)    block 3 (4 bytes)
@@ -199,8 +199,10 @@ function hashBlocks(wPtr: usize, mPtr: usize): void {
  *   wV128_17      based on item 1 to 15
  *   ...
  *   wV128_63      based on item 47 to 62
+ *
  */
-function hashBlocksV128(wV128Arr: v128[], mV128Arr: v128[]): void {
+@inline
+function hashBlocksV128(): void {
   // this is a copy of data
   aV128 = H0V128;
   bV128 = H1V128;
@@ -211,22 +213,12 @@ function hashBlocksV128(wV128Arr: v128[], mV128Arr: v128[]): void {
   gV128 = H6V128;
   hV128 = H7V128;
 
-  // TODO: this is not parallel operators, need to use v128.load and work on bytes
-  for (i = 0; i < 16; i++) {
-    wV128Arr[i] = load32beV128(mV128Arr[i]);
-  }
-
-  // Expand message blocks 17-64
-  for (i = 16; i < 64; i++) {
-    let tmp0 = i32x4.add(SIG1V128(wV128Arr[i - 2]), wV128Arr[i - 7]);
-    let tmp1 = i32x4.add(SIG0V128(wV128Arr[i - 15]), wV128Arr[i - 16]);
-    wV128Arr[i] = i32x4.add(tmp0, tmp1);
-  }
+  // WV128 were initialized by the caller
 
   // Apply SHA256 compression function on expanded message blocks
   for (i = 0; i < 64; i++) {
     // t1 = h + EP1(e) + CH(e, f, g) + load32(kPtr, i) + load32(wPtr, i);
-    t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), KV128[i]), wV128Arr[i]);
+    t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), KV128[i]), WV128[i]);
     // t2 = EP0(a) + MAJ(a, b, c);
     t2V128 = i32x4.add(EP0V128(aV128), MAJV128(aV128, bV128, cV128));
     // h = g;
@@ -291,7 +283,7 @@ function hashPreCompW(wPtr: usize): void {
   H7 += h;
 }
 
-function hashPreCompWV128(wV128Arr: v128[]): void {
+function hashPreCompWV128(): void {
   aV128 = H0V128;
   bV128 = H1V128;
   cV128 = H2V128;
@@ -303,7 +295,7 @@ function hashPreCompWV128(wV128Arr: v128[]): void {
 
   // Apply SHA256 compression function on expanded message blocks
   for (i = 0; i < 64; i++) {
-    t1V128 = i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), wV128Arr[i]);
+    t1V128 = i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), W64V128[i]);
     t2V128 = i32x4.add(EP0V128(aV128), MAJV128(aV128, bV128, cV128));
     hV128 = gV128;
     gV128 = fV128;
@@ -376,8 +368,19 @@ export function hash8HashObjects(inPtr: usize, outPtr: usize): void {
 
 function digest64V128(outPtr: usize): void {
   initV128();
-  hashBlocksV128(WV128, inV128Arr);
-  hashPreCompWV128(W64V128);
+
+  // TODO: this is not parallel operators, need to use v128.load and work on bytes
+  for (i = 0; i < 16; i++) {
+    WV128[i] = load32beV128(inV128Arr[i]);
+  }
+
+  // Expand message blocks 17-64
+  for (i = 16; i < 64; i++) {
+    WV128[i] = i32x4.add(i32x4.add(SIG1V128(WV128[i - 2]), WV128[i - 7]), i32x4.add(SIG0V128(WV128[i - 15]), WV128[i - 16]));
+  }
+
+  hashBlocksV128();
+  hashPreCompWV128();
 
   // outPtr is 32 bytes each x 4 (PARALLEL_FACTOR) = 128 bytes
   // extract lane manually otherwise get "Expression must be a compile-time constant.""
@@ -419,6 +422,7 @@ function digest64V128(outPtr: usize): void {
   store32(outPtr, 31, bswap(i32x4.extract_lane(H7V128, 3)));
 }
 
+@inline
 export function CH(x: u32, y: u32, z: u32): u32 {
   return((x & y) ^ (~x & z));
 }
@@ -428,6 +432,7 @@ export function CHV128(x: v128, y: v128, z: v128): v128 {
   return v128.xor(v128.and(x, y), v128.and(v128.not(x), z));
 }
 
+@inline
 export function MAJ(x: u32, y: u32, z:u32): u32 {
   return ((x & y) ^ (x & z) ^ (y & z));
 }
@@ -437,6 +442,7 @@ export function MAJV128(x: v128, y: v128, z: v128): v128 {
   return v128.xor(v128.xor(v128.and(x, y), v128.and(x, z)), v128.and(y, z));
 }
 
+@inline
 export function EP0(x: u32): u32 {
   return rotr(x, 2) ^ rotr(x, 13) ^ rotr(x, 22);
 }
@@ -446,6 +452,7 @@ export function EP0V128(x: v128): v128 {
   return v128.xor(v128.xor(rotrV128(x, 2), rotrV128(x, 13)), rotrV128(x, 22));
 }
 
+@inline
 export function EP1(x: u32): u32 {
   return rotr(x, 6) ^ rotr(x, 11) ^ rotr(x, 25);
 }
@@ -455,6 +462,7 @@ export function EP1V128(x: v128): v128 {
   return v128.xor(v128.xor(rotrV128(x, 6), rotrV128(x, 11)), rotrV128(x, 25));
 }
 
+@inline
 export function SIG0(x: u32): u32 {
   return rotr(x, 7) ^ rotr(x, 18) ^ (x >>> 3);
 }
@@ -464,6 +472,7 @@ export function SIG0V128(x: v128): v128 {
   return v128.xor(v128.xor(rotrV128(x, 7), rotrV128(x, 18)), i32x4.shr_u(x, 3));
 }
 
+@inline
 export function SIG1(x: u32): u32 {
   return rotr(x, 17) ^ rotr(x, 19) ^ (x >>> 10);
 }
@@ -471,10 +480,6 @@ export function SIG1(x: u32): u32 {
 @inline
 export function SIG1V128(x: v128): v128 {
   return v128.xor(v128.xor(rotrV128(x, 17), rotrV128(x, 19)), i32x4.shr_u(x, 10));
-}
-
-export function rotrU32(value: u32, bits: i32): u32 {
-  return rotr(value, bits);
 }
 
 /**
@@ -497,6 +502,7 @@ function rotrV128(value: v128, bits: i32): v128 {
   return v128.or(rightShifted, leftShifted);
 }
 
+@inline
 function load32beV128(value: v128): v128 {
   const value0 = i32x4.shl(v128.and(value, i32x4.splat(0x000000FF)), 24);
   const value1 = i32x4.shl(v128.and(value, i32x4.splat(0x0000FF00)), 8);
