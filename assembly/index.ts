@@ -12,7 +12,7 @@ export const input = new ArrayBuffer(INPUT_LENGTH);
 const inputPtr = changetype<usize>(input);
 
 // expanded block is 64 * 4 bytes = 256 bytes, which is 4x the block
-export const wInput = new ArrayBuffer(4 * INPUT_LENGTH);
+const wInput = new ArrayBuffer(4 * INPUT_LENGTH);
 const wInputPtr = changetype<usize>(wInput);
 
 // output buffer

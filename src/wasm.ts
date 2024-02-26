@@ -11,9 +11,6 @@ export interface WasmContext {
   input: {
     value: number;
   };
-  wInput: {
-    value: number;
-  };
   output: {
     value: number;
   };

@@ -5,14 +5,11 @@ import {newInstance} from "./wasm.js";
 const ctx = newInstance();
 
 const wasmInputValue = ctx.input.value;
-const wasmWInputValue = ctx.wInput.value;
 const wasmOutputValue = ctx.output.value;
 const inputUint8Array = new Uint8Array(ctx.memory.buffer, wasmInputValue, ctx.INPUT_LENGTH);
-const wInputUint8Array = new Uint8Array(ctx.memory.buffer, wasmWInputValue, ctx.INPUT_LENGTH);
 // TODO: remove hard code
 const outputUint8Array = new Uint8Array(ctx.memory.buffer, wasmOutputValue, 32 * 4);
 const inputUint32Array = new Uint32Array(ctx.memory.buffer, wasmInputValue, ctx.INPUT_LENGTH);
-const wInputUint32Array = new Uint32Array(ctx.memory.buffer, wasmWInputValue, ctx.INPUT_LENGTH);
 
 // TODO: reuse from context?
 const PARALLEL_FACTOR = 16;
