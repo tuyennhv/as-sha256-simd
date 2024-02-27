@@ -152,23 +152,12 @@ function hashBlocks(wPtr: usize, mPtr: usize): void {
   h = H7;
 
   // Load message blocks into first 16 expanded message blocks
-  for (i = 0; i < 16; i++) {
-    store32(wPtr, i,
-      load32be(mPtr, i)
-    );
-  }
-  // Expand message blocks 17-64
-  for (i = 16; i < 64; i++) {
-    store32(wPtr, i,
-      SIG1(load32(wPtr, i - 2)) +
-      load32(wPtr, i - 7) +
-      SIG0(load32(wPtr, i - 15)) +
-      load32(wPtr, i - 16)
-    );
-  }
 
+  let tmpW: u32 = 0;
   // Apply SHA256 compression function on expanded message blocks
   for (i = 0; i < 64; i++) {
+    tmpW = i < 16 ? load32be(mPtr, i) :  SIG1(load32(wPtr, i - 2)) + load32(wPtr, i - 7) + SIG0(load32(wPtr, i - 15)) + load32(wPtr, i - 16);
+    store32(wPtr, i, tmpW);
     t1 = h + EP1(e) + CH(e, f, g) + load32(kPtr, i) + load32(wPtr, i);
     t2 = EP0(a) + MAJ(a, b, c);
     h = g;
@@ -190,6 +179,8 @@ function hashBlocks(wPtr: usize, mPtr: usize): void {
   H6 += g;
   H7 += h;
 }
+
+let tmpW: v128;
 
 /**
  * Expand message blocks (16 32bit blocks), into extended message blocks (64 32bit blocks) ==> this was done by the consumer
@@ -225,8 +216,13 @@ function hashBlocksV128(): void {
 
   // Apply SHA256 compression function on expanded message blocks
   for (i = 0; i < 64; i++) {
+    tmpW = i < 16 ? getV128(wInputPtr, i) : i32x4.add(i32x4.add(i32x4.add(SIG1V128(getV128(wInputPtr, i - 2)), getV128(wInputPtr, i - 7)), SIG0V128(getV128(wInputPtr, i - 15))), getV128(wInputPtr, i - 16));
+    if (i >= 16) {
+      setV128(wInputPtr, i, tmpW);
+    }
     // t1 = h + EP1(e) + CH(e, f, g) + load32(kPtr, i) + load32(wPtr, i);
-    t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getV128(kV128Ptr, i)), getV128(wInputPtr, i));
+    // t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getV128(kV128Ptr, i)), getV128(wInputPtr, i));
+    t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getV128(kV128Ptr, i)), tmpW);
     // t2 = EP0(a) + MAJ(a, b, c);
     t2V128 = i32x4.add(EP0V128(aV128), MAJV128(aV128, bV128, cV128));
     // h = g;
@@ -255,6 +251,204 @@ function hashBlocksV128(): void {
   H5V128 = i32x4.add(H5V128, fV128);
   H6V128 = i32x4.add(H6V128, gV128);
   H7V128 = i32x4.add(H7V128, hV128);
+}
+
+@inline
+function setV128(ptr: usize, i: i32, v: v128): void {
+  switch(i) {
+    case 0:
+      v128.store(ptr, v, 0);
+      break;
+    case 1:
+      v128.store(ptr, v, 16);
+      break;
+    case 2:
+      v128.store(ptr, v, 32);
+      break;
+    case 3:
+      v128.store(ptr, v, 48);
+      break;
+    case 4:
+      v128.store(ptr, v, 64);
+      break;
+    case 5:
+      v128.store(ptr, v, 80);
+      break;
+    case 6:
+      v128.store(ptr, v, 96);
+      break;
+    case 7:
+      v128.store(ptr, v, 112);
+      break;
+    case 8:
+      v128.store(ptr, v, 128);
+      break;
+    case 9:
+      v128.store(ptr, v, 144);
+      break;
+    case 10:
+      v128.store(ptr, v, 160);
+      break;
+    case 11:
+      v128.store(ptr, v, 176);
+      break;
+    case 12:
+      v128.store(ptr, v, 192);
+      break;
+    case 13:
+      v128.store(ptr, v, 208);
+      break;
+    case 14:
+      v128.store(ptr, v, 224);
+      break;
+    case 15:
+      v128.store(ptr, v, 240);
+      break;
+    case 16:
+      v128.store(ptr, v, 256);
+      break;
+    case 17:
+      v128.store(ptr, v, 272);
+      break;
+    case 18:
+      v128.store(ptr, v, 288);
+      break;
+    case 19:
+      v128.store(ptr, v, 304);
+      break;
+    case 20:
+      v128.store(ptr, v, 320);
+      break;
+    case 21:
+      v128.store(ptr, v, 336);
+      break;
+    case 22:
+      v128.store(ptr, v, 352);
+      break;
+    case 23:
+      v128.store(ptr, v, 368);
+      break;
+    case 24:
+      v128.store(ptr, v, 384);
+      break;
+    case 25:
+      v128.store(ptr, v, 400);
+      break;
+    case 26:
+      v128.store(ptr, v, 416);
+      break;
+    case 27:
+      v128.store(ptr, v, 432);
+      break;
+    case 28:
+      v128.store(ptr, v, 448);
+      break;
+    case 29:
+      v128.store(ptr, v, 464);
+      break;
+    case 30:
+      v128.store(ptr, v, 480);
+      break;
+    case 31:
+      v128.store(ptr, v, 496);
+      break;
+    case 32:
+      v128.store(ptr, v, 512);
+      break;
+    case 33:
+      v128.store(ptr, v, 528);
+      break;
+    case 34:
+      v128.store(ptr, v, 544);
+      break;
+    case 35:
+      v128.store(ptr, v, 560);
+      break;
+    case 36:
+      v128.store(ptr, v, 576);
+      break;
+    case 37:
+      v128.store(ptr, v, 592);
+      break;
+    case 38:
+      v128.store(ptr, v, 608);
+      break;
+    case 39:
+      v128.store(ptr, v, 624);
+      break;
+    case 40:
+      v128.store(ptr, v, 640);
+      break;
+    case 41:
+      v128.store(ptr, v, 656);
+      break;
+    case 42:
+      v128.store(ptr, v, 672);
+      break;
+    case 43:
+      v128.store(ptr, v, 688);
+      break;
+    case 44:
+      v128.store(ptr, v, 704);
+      break;
+    case 45:
+      v128.store(ptr, v, 720);
+      break;
+    case 46:
+      v128.store(ptr, v, 736);
+      break;
+    case 47:
+      v128.store(ptr, v, 752);
+      break;
+    case 48:
+      v128.store(ptr, v, 768);
+      break;
+    case 49:
+      v128.store(ptr, v, 784);
+      break;
+    case 50:
+      v128.store(ptr, v, 800);
+      break;
+    case 51:
+      v128.store(ptr, v, 816);
+      break;
+    case 52:
+      v128.store(ptr, v, 832);
+      break;
+    case 53:
+      v128.store(ptr, v, 848);
+      break;
+    case 54:
+      v128.store(ptr, v, 864);
+      break;
+    case 55:
+      v128.store(ptr, v, 880);
+      break;
+    case 56:
+      v128.store(ptr, v, 896);
+      break;
+    case 57:
+      v128.store(ptr, v, 912);
+      break;
+    case 58:
+      v128.store(ptr, v, 928);
+      break;
+    case 59:
+      v128.store(ptr, v, 944);
+      break;
+    case 60:
+      v128.store(ptr, v, 960);
+      break;
+    case 61:
+      v128.store(ptr, v, 976);
+      break;
+    case 62:
+      v128.store(ptr, v, 992);
+      break;
+    case 63:
+      v128.store(ptr, v, 1008);
+      break;
+  }
 }
 
 // work around this error: "ERROR AS220: Expression must be a compile-time constant."
@@ -523,36 +717,36 @@ function digest64V128(outPtr: usize): void {
 
   // this is not SIMD however it is faster than the above
   // set extended data for block
-  for (i = 16; i < 64; i++) {
-    // PARALLEL_FACTOR = 4
-    store32(wInputPtr, i * 4,
-      SIG1(load32(wInputPtr, (i - 2) * 4)) +
-      load32(wInputPtr, (i - 7) * 4) +
-      SIG0(load32(wInputPtr, (i - 15) * 4)) +
-      load32(wInputPtr, (i - 16) * 4)
-    );
+  // for (i = 16; i < 64; i++) {
+  //   // PARALLEL_FACTOR = 4
+  //   store32(wInputPtr, i * 4,
+  //     SIG1(load32(wInputPtr, (i - 2) * 4)) +
+  //     load32(wInputPtr, (i - 7) * 4) +
+  //     SIG0(load32(wInputPtr, (i - 15) * 4)) +
+  //     load32(wInputPtr, (i - 16) * 4)
+  //   );
 
-    store32(wInputPtr, i * 4 + 1,
-      SIG1(load32(wInputPtr, (i - 2) * 4 + 1)) +
-      load32(wInputPtr, (i - 7) * 4 + 1) +
-      SIG0(load32(wInputPtr, (i - 15) * 4 + 1)) +
-      load32(wInputPtr, (i - 16) * 4 + 1)
-    );
+  //   store32(wInputPtr, i * 4 + 1,
+  //     SIG1(load32(wInputPtr, (i - 2) * 4 + 1)) +
+  //     load32(wInputPtr, (i - 7) * 4 + 1) +
+  //     SIG0(load32(wInputPtr, (i - 15) * 4 + 1)) +
+  //     load32(wInputPtr, (i - 16) * 4 + 1)
+  //   );
 
-    store32(wInputPtr, i * 4 + 2,
-      SIG1(load32(wInputPtr, (i - 2) * 4 + 2)) +
-      load32(wInputPtr, (i - 7) * 4 + 2) +
-      SIG0(load32(wInputPtr, (i - 15) * 4 + 2)) +
-      load32(wInputPtr, (i - 16) * 4 + 2)
-    );
+  //   store32(wInputPtr, i * 4 + 2,
+  //     SIG1(load32(wInputPtr, (i - 2) * 4 + 2)) +
+  //     load32(wInputPtr, (i - 7) * 4 + 2) +
+  //     SIG0(load32(wInputPtr, (i - 15) * 4 + 2)) +
+  //     load32(wInputPtr, (i - 16) * 4 + 2)
+  //   );
 
-    store32(wInputPtr, i * 4 + 3,
-      SIG1(load32(wInputPtr, (i - 2) * 4 + 3)) +
-      load32(wInputPtr, (i - 7) * 4 + 3) +
-      SIG0(load32(wInputPtr, (i - 15) * 4 + 3)) +
-      load32(wInputPtr, (i - 16) * 4 + 3)
-    );
-  }
+  //   store32(wInputPtr, i * 4 + 3,
+  //     SIG1(load32(wInputPtr, (i - 2) * 4 + 3)) +
+  //     load32(wInputPtr, (i - 7) * 4 + 3) +
+  //     SIG0(load32(wInputPtr, (i - 15) * 4 + 3)) +
+  //     load32(wInputPtr, (i - 16) * 4 + 3)
+  //   );
+  // }
 
   hashBlocksV128();
   hashPreCompWV128();

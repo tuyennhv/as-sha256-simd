@@ -24,9 +24,7 @@ export function digest64(data: Uint8Array): Uint8Array {
   if (data.length === 64) {
     inputUint8Array.set(data);
     ctx.digest64(wasmInputValue, wasmOutputValue);
-    const output = new Uint8Array(32);
-    output.set(outputUint8Array.subarray(0, 32));
-    return output;
+    return outputUint8Array.slice(0, 32);
   }
   throw new Error("InvalidLengthForDigest64");
 }
