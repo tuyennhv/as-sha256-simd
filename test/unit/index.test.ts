@@ -15,7 +15,16 @@ describe("Test assemblyscript", () => {
       131, 72, 178, 215, 235, 20, 207, 110,
     ]);
     expect(output).to.be.deep.equal(expectedOutput, "incorrect digest64 result");
-  })
+  });
+
+  it("test digest64 compare to crypto", () => {
+    for (let i = 0; i < 1000; i++) {
+      const input = crypto.randomBytes(64);
+      const output = digest64(input);
+      const expectedOutput = crypto.createHash("sha256").update(input).digest();
+      expect(output).to.be.deep.equal(expectedOutput, "incorrect digest64 result " + i);
+    }
+  });
 
   it("testHash4Inputs", () => {
     const input1 = "gajindergajindergajindergajinder";
@@ -58,7 +67,3 @@ describe("Test assemblyscript", () => {
     }
   });
 });
-
-function toBigEndian(value: number): number {
-  return ((value & 0xFF) << 24) | ((value & 0xFF00) << 8) | ((value & 0xFF0000) >>> 8) | ((value & 0xFF000000) >>> 24);
-}
