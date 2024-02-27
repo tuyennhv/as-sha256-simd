@@ -52,14 +52,10 @@ export function hash4Inputs(i0: Uint8Array, i1: Uint8Array, i2: Uint8Array, i3: 
 
   ctx.hash4Inputs(wasmOutputValue);
 
-  const output0 = new Uint8Array(32);
-  output0.set(outputUint8Array.subarray(0, 32));
-  const output1 = new Uint8Array(32);
-  output1.set(outputUint8Array.subarray(32, 64));
-  const output2 = new Uint8Array(32);
-  output2.set(outputUint8Array.subarray(64, 96));
-  const output3 = new Uint8Array(32);
-  output3.set(outputUint8Array.subarray(96, 128));
+  const output0 = outputUint8Array.slice(0, 32);
+  const output1 = outputUint8Array.slice(32, 64);
+  const output2 = outputUint8Array.slice(64, 96);
+  const output3 = outputUint8Array.slice(96, 128);
 
   return [output0, output1, output2, output3];
 }

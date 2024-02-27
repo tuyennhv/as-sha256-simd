@@ -25,6 +25,13 @@ import { byteArrayToHashObject } from "../../src/hashObject.js";
     ✔ digest64 50023 times                                                27.29671 ops/s    36.63445 ms/op   x0.962         10 runs  0.868 s
     ✔ hash 200092 times using hash4Inputs                                 8.757761 ops/s    114.1844 ms/op   x1.132          4 runs   1.04 s
     ✔ hash 200092 times using hash8HashObjects                            9.278248 ops/s    107.7790 ms/op   x1.207          3 runs  0.870 s
+
+  // above + slice() for hash4Inputs() ==> save 5ms
+  digest64 vs hash4Inputs vs hash8HashObjects
+    ✔ digest64 50023 times                                                27.17361 ops/s    36.80040 ms/op   x1.002         10 runs  0.897 s
+    ✔ hash 200092 times using hash4Inputs                                 9.091486 ops/s    109.9930 ms/op   x0.998          5 runs   1.11 s
+    ✔ hash 200092 times using hash8HashObjects                            9.242092 ops/s    108.2006 ms/op   x0.999          3 runs  0.875 s
+
  */
 describe("digest64 vs hash4Inputs vs hash8HashObjects", function () {
   this.timeout(0);
