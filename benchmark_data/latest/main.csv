@@ -1,5 +1,0 @@
-#,commit,6db95e12ca447fdd4f6a841e767df142ecff698c
-id,averageNs,runsDone,totalMs,threshold
-digest64 50023 times,34489797,278,10092,2
-hash 200092 times using hash4Inputs,110597936,87,10211,2
-hash 200092 times using hash8HashObjects,108079330,89,10177,2
