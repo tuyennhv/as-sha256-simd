@@ -44,10 +44,7 @@ const K: u32[] = [
 const kV128ArrayBuffer = new ArrayBuffer(4 * 64 * PARALLEL_FACTOR);
 const kV128Ptr = changetype<usize>(kV128ArrayBuffer);
 for (let i = 0; i < 64; i++) {
-  store32(kV128Ptr, i * 4, K[i]);
-  store32(kV128Ptr, i * 4 + 1, K[i]);
-  store32(kV128Ptr, i * 4 + 2, K[i]);
-  store32(kV128Ptr, i * 4 + 3, K[i]);
+  setV128(kV128Ptr, i, i32x4.splat(K[i]));
 }
 
 const kPtr = K.dataStart;
@@ -73,8 +70,11 @@ const W64: u32[] = [
 ];
 const w64Ptr = W64.dataStart;
 
-// not sure why turning this into pointer (like K) make it slower
-const W64V128: v128[] = W64.map((w: u32) => i32x4.splat(w));
+const w64V12ArrayBuffer = new ArrayBuffer(4 * 64 * PARALLEL_FACTOR);
+const w64V128Ptr = changetype<usize>(w64V12ArrayBuffer);
+for (let i = 0; i < 64; i++) {
+  setV128(w64V128Ptr, i, i32x4.splat(W64[i]));
+}
 
 // intermediate hash values stored in H0-H7
 var H0: u32, H1: u32, H2: u32, H3: u32, H4: u32, H5: u32, H6: u32, H7: u32;
@@ -292,7 +292,7 @@ function hashPreCompWV128(): void {
 
   // Apply SHA256 compression function on expanded message blocks
   for (i = 0; i < 64; i++) {
-    t1V128 = i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), W64V128[i]);
+    t1V128 = i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getV128(w64V128Ptr, i));
     t2V128 = i32x4.add(EP0V128(aV128), MAJV128(aV128, bV128, cV128));
     hV128 = gV128;
     gV128 = fV128;

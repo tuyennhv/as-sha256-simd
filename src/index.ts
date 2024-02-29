@@ -1,4 +1,3 @@
-import { input } from "../assembly/index.js";
 import { HashObject, byteArrayToHashObject } from "./hashObject.js";
 import {newInstance} from "./wasm.js";
 
@@ -11,14 +10,7 @@ const inputUint8Array = new Uint8Array(ctx.memory.buffer, wasmInputValue, ctx.IN
 const outputUint8Array = new Uint8Array(ctx.memory.buffer, wasmOutputValue, 32 * 4);
 const inputUint32Array = new Uint32Array(ctx.memory.buffer, wasmInputValue, ctx.INPUT_LENGTH);
 
-// TODO: reuse from context?
-const PARALLEL_FACTOR = 16;
-// TODO: change 2 to 64
 const HASH_INPUT_LENGTH = 64;
-// TODO: change 1 to 32
-const HASH_OUTPUT_LENGTH = 2;
-// 64 bytes
-type HASH_INPUT = Uint8Array;
 
 export function digest64(data: Uint8Array): Uint8Array {
   if (data.length === 64) {
@@ -174,5 +166,3 @@ export function hash8HashObjects(inputs: HashObject[]): HashObject[] {
 
   return [output0, output1, output2, output3];
 }
-
-const rotr = (word: number, shift: number) => (word << (32 - shift)) | (word >>> shift);
