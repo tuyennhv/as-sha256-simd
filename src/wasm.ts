@@ -15,11 +15,6 @@ export interface WasmContext {
     value: number;
   };
 
-  // init(): void;
-  // update(dataPtr: number, dataLength: number): void;
-  // final(outPtr: number): void;
-
-  // digest(length: number): void;
   digest64(inPtr: number, outPtr: number): void;
   hash4Inputs(outPtr: number): void;
   hash8HashObjects(outPtr: number): void;
