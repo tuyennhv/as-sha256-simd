@@ -183,7 +183,10 @@ function hashBlocks(wPtr: usize, mPtr: usize): void {
 let tmpW: v128;
 
 /**
- * Expand message blocks (16 32bit blocks), into extended message blocks (64 32bit blocks) ==> this was done by the consumer
+ * Expand message blocks (16 32bit blocks), into extended message blocks (64 32bit blocks)
+ * There are 4 inputs, each input is 64 bytes which is 16 v128 objects of wInputPtr
+ * The first 16 v128 objects are computed before this function
+ * The remaining 48 v128 objects are computed from the first 16 v128 objects in this function
  * Apply SHA256 compression function on extended message blocks
  * Update intermediate hash values
  * @param WV128 64 v128 objects respective to 4 expanded message blocks memory
@@ -212,34 +215,22 @@ function hashBlocksV128(): void {
   gV128 = H6V128;
   hV128 = H7V128;
 
-  // WV128 were initialized by the caller
-
   // Apply SHA256 compression function on expanded message blocks
   for (i = 0; i < 64; i++) {
-    tmpW = i < 16 ? getV128(wInputPtr, i) : i32x4.add(i32x4.add(i32x4.add(SIG1V128(getV128(wInputPtr, i - 2)), getV128(wInputPtr, i - 7)), SIG0V128(getV128(wInputPtr, i - 15))), getV128(wInputPtr, i - 16));
+    tmpW = i < 16 ? getV128(wInputPtr, i) : i32x4.add(i32x4.add(i32x4.add(SIG1V128(getV128(wInputPtr, i - 2)), getV128(wInputPtr, i - 7)),
+      SIG0V128(getV128(wInputPtr, i - 15))), getV128(wInputPtr, i - 16));
     if (i >= 16) {
       setV128(wInputPtr, i, tmpW);
     }
-    // t1 = h + EP1(e) + CH(e, f, g) + load32(kPtr, i) + load32(wPtr, i);
-    // t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getV128(kV128Ptr, i)), getV128(wInputPtr, i));
     t1V128 = i32x4.add(i32x4.add(i32x4.add(i32x4.add(hV128, EP1V128(eV128)), CHV128(eV128, fV128, gV128)), getV128(kV128Ptr, i)), tmpW);
-    // t2 = EP0(a) + MAJ(a, b, c);
     t2V128 = i32x4.add(EP0V128(aV128), MAJV128(aV128, bV128, cV128));
-    // h = g;
     hV128 = gV128;
-    // g = f;
     gV128 = fV128;
-    // f = e;
     fV128 = eV128;
-    // e = d + t1;
     eV128 = i32x4.add(dV128, t1V128);
-    // d = c;
     dV128 = cV128;
-    // c = b;
     cV128 = bV128;
-    // b = a;
     bV128 = aV128;
-    // a = t1 + t2;
     aV128 = i32x4.add(t1V128, t2V128);
   }
 
@@ -253,6 +244,10 @@ function hashBlocksV128(): void {
   H7V128 = i32x4.add(H7V128, hV128);
 }
 
+/**
+ * Cannot store v128 to memory with non-constant index, otherwise get error:
+ * "ERROR AS220: Expression must be a compile-time constant."
+ */
 @inline
 function setV128(ptr: usize, i: i32, v: v128): void {
   switch(i) {
@@ -451,7 +446,10 @@ function setV128(ptr: usize, i: i32, v: v128): void {
   }
 }
 
-// work around this error: "ERROR AS220: Expression must be a compile-time constant."
+/**
+ * Cannot load v128 from memory with non-constant index, otherwise get error:
+ * "ERROR AS220: Expression must be a compile-time constant."
+ */
 @inline
 function getV128(ptr: usize, i: i32): v128 {
   switch (i) {
@@ -671,20 +669,26 @@ export function digest64(inPtr: usize, outPtr: usize): void {
   store32(outPtr, 7, bswap(H7));
 }
 
+/**
+ * Hash 4 inputs of exactly 64 bytes each
+ * Input pointer is 256 bytes as below:
+ *              byte                       u32
+ * input 0      0 1 2 ... 63      <===>    0   1 ... 15
+ * input 1      64 65 ... 127     <===>    16 17 ... 31
+ * input 2      128   ... 191     <===>    32 33 ... 47
+ * input 3      192   ... 255     <===>    48 49 ... 63
+ *
+ * we need to transfer it to expanded message blocks, with 16 first items like:
+ *
+ * w_v128_0     0 16 32 48
+ * w_v128_1     1 17 33 49
+ * ...
+ * w_v128_15    15 31 47 63
+ *
+ * remaining 48 items are computed inside hashBlocksV128 loop.
+ * @param outPtr
+ */
 export function hash4Inputs(outPtr: usize): void {
-  // transform input differently than hash8HashObjects
-  // inputPtr is like
-  // byte                   u32
-  // 0 1 2 ... 63      ===> 0   1 ... 15
-  // 64 65 ... 127     ===> 16 17 ... 31
-  // 128 ... 191       ===> 32 33 ... 47
-  // 192 ... 255       ===> 48 49 ... 63
-
-  // transform to
-  // 0 16 32 48
-  // 1 17 33 49
-  // ...
-  // 15 31 47 63
   for (i = 0; i < 16; i++) {
     store32(wInputPtr, PARALLEL_FACTOR * i, load32be(inputPtr, i));
     store32(wInputPtr, PARALLEL_FACTOR * i + 1, load32be(inputPtr, i + 16));
@@ -695,6 +699,26 @@ export function hash4Inputs(outPtr: usize): void {
   digest64V128(outPtr);
 }
 
+/*
+ * Hash 8 hash objects which are 4 inputs of 64 bytes each similar to hash4Inputs
+ *
+ * Input pointer is 64 u32 (256 bytes) as below:
+ * input 0   input 1   input 2   input 3
+ * h0        h0        h0        h0
+ * h1        h1        h1        h1
+ * ...
+ * h7        h7        h7        h7
+ * h0        h0        h0        h0
+ * h1        h1        h1        h1
+ * ...
+ * h7        h7        h7        h7
+ *
+ * that's already the setup for wInputPtr, we only need to load be value of them to make
+ * it the first 16 items of expanded message blocks
+ *
+ * remaining 48 items are computed inside hashBlocksV128 loop.
+ *
+ */
 export function hash8HashObjects(outPtr: usize): void {
   for (i = 0; i < 16 * PARALLEL_FACTOR; i++) {
     store32(wInputPtr, i, load32be(inputPtr, i));
@@ -705,48 +729,6 @@ export function hash8HashObjects(outPtr: usize): void {
 
 function digest64V128(outPtr: usize): void {
   initV128();
-
-  // for (i = 0; i < 16; i++) {
-  //   WV128[i] = load32beV128(inV128Arr[i]);
-  // }
-
-  // // Expand message blocks 17-64, this leverage SIMD however the created v128 array is not performant
-  // for (i = 16; i < 64; i++) {
-  //   WV128[i] = i32x4.add(i32x4.add(SIG1V128(WV128[i - 2]), WV128[i - 7]), i32x4.add(SIG0V128(WV128[i - 15]), WV128[i - 16]));
-  // }
-
-  // this is not SIMD however it is faster than the above
-  // set extended data for block
-  // for (i = 16; i < 64; i++) {
-  //   // PARALLEL_FACTOR = 4
-  //   store32(wInputPtr, i * 4,
-  //     SIG1(load32(wInputPtr, (i - 2) * 4)) +
-  //     load32(wInputPtr, (i - 7) * 4) +
-  //     SIG0(load32(wInputPtr, (i - 15) * 4)) +
-  //     load32(wInputPtr, (i - 16) * 4)
-  //   );
-
-  //   store32(wInputPtr, i * 4 + 1,
-  //     SIG1(load32(wInputPtr, (i - 2) * 4 + 1)) +
-  //     load32(wInputPtr, (i - 7) * 4 + 1) +
-  //     SIG0(load32(wInputPtr, (i - 15) * 4 + 1)) +
-  //     load32(wInputPtr, (i - 16) * 4 + 1)
-  //   );
-
-  //   store32(wInputPtr, i * 4 + 2,
-  //     SIG1(load32(wInputPtr, (i - 2) * 4 + 2)) +
-  //     load32(wInputPtr, (i - 7) * 4 + 2) +
-  //     SIG0(load32(wInputPtr, (i - 15) * 4 + 2)) +
-  //     load32(wInputPtr, (i - 16) * 4 + 2)
-  //   );
-
-  //   store32(wInputPtr, i * 4 + 3,
-  //     SIG1(load32(wInputPtr, (i - 2) * 4 + 3)) +
-  //     load32(wInputPtr, (i - 7) * 4 + 3) +
-  //     SIG0(load32(wInputPtr, (i - 15) * 4 + 3)) +
-  //     load32(wInputPtr, (i - 16) * 4 + 3)
-  //   );
-  // }
 
   hashBlocksV128();
   hashPreCompWV128();
