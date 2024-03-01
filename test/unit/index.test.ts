@@ -1,9 +1,28 @@
 import {expect} from "chai";
 import crypto from "crypto";
-import {hash4Inputs, digest64, hash8HashObjects} from "../../src/index.js";
+import {hash4Inputs, digest64, hash8HashObjects, digest64HashObjects} from "../../src/index.js";
 import { byteArrayToHashObject, hashObjectToByteArray } from "../../src/hashObject.js";
 
 describe("Test assemblyscript", () => {
+
+  it("test digest64HashObjects", () => {
+    const input1 = "gajindergajindergajindergajinder";
+    const input2 = "gajindergajindergajindergajinder";
+    const buffer1 = Buffer.from(input1, "utf-8");
+    const buffer2 = Buffer.from(input2, "utf-8");
+    const obj1 = byteArrayToHashObject(buffer1);
+    const obj2 = byteArrayToHashObject(buffer2);
+
+    const hashObjectOutput = digest64HashObjects(obj1, obj2);
+    const output = new Uint8Array(32);
+    hashObjectToByteArray(hashObjectOutput, output, 0);
+    const expectedOutput = new Uint8Array([
+      190, 57, 56, 15, 241, 208, 38, 30, 111, 55, 218, 254, 66, 120, 182, 98, 239, 97, 31, 28, 178, 247, 192, 161,
+      131, 72, 178, 215, 235, 20, 207, 110,
+    ]);
+
+    expect(output).to.be.deep.equal(expectedOutput, "incorrect digest64 result");
+  });
 
   it("test digest64", () => {
     const input1 = "gajindergajindergajindergajinder";

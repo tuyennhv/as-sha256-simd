@@ -1,5 +1,5 @@
 import {itBench, setBenchOpts} from "@dapplion/benchmark";
-import { digest64, hash4Inputs, hash8HashObjects } from "../../src/index.js";
+import { digest64, hash4Inputs, hash8HashObjects, digest64HashObjects } from "../../src/index.js";
 import { byteArrayToHashObject } from "../../src/hashObject.js";
 
 /**
@@ -46,8 +46,20 @@ describe("digest64 vs hash4Inputs vs hash8HashObjects", function () {
   });
 
   const input = Buffer.from("gajindergajindergajindergajindergajindergajindergajindergajinder", "utf8");
+  const input1 = "gajindergajindergajindergajinder";
+  const input2 = "gajindergajindergajindergajinder";
+  const buffer1 = Buffer.from(input1, "utf-8");
+  const buffer2 = Buffer.from(input2, "utf-8");
+  const obj1 = byteArrayToHashObject(buffer1);
+  const obj2 = byteArrayToHashObject(buffer2);
+
   // total number of time running hash for 200000 balances
   const iterations = 50023;
+
+  itBench(`digestTwoHashObjects ${iterations} times`, () => {
+    for (let j = 0; j < iterations; j++) digest64HashObjects(obj1, obj2);
+  });
+
   itBench(`digest64 ${iterations} times`, () => {
     for (let j = 0; j < iterations; j++) digest64(input);
   });
