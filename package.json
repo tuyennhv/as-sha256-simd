@@ -9,7 +9,7 @@
     "benchmark": "node --loader ts-node/esm ./node_modules/.bin/benchmark 'test/perf/index.test.ts'",
     "benchmark:local": "yarn benchmark --local",
     "asbuild:debug": "asc assembly/index.ts --target debug --enable simd",
-    "asbuild:release": "asc assembly/index.ts --target release --enable simd",
+    "asbuild:release": "asc assembly/index.ts --target release -O3z --enable simd",
     "asbuild": "npm run asbuild:debug && npm run asbuild:release && npm run generate",
     "generate": "node --loader ts-node/esm ./scripts/codegen.ts",
     "start": "npx serve ."
